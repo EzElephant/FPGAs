@@ -6,7 +6,7 @@
 
 module vga(
     input clk_25MHz,
-    output [11:0] pixel,
+    output reg [11:0] final_pixel,
     output hsync,
     output vsync
 );
@@ -21,7 +21,14 @@ vga_controller VGA(.pclk(clk_25MHz), .reset(rst), .hsync(hsync), .vsync(vsync),
 blk_mem_gen_0 blk_mem_gen_0_inst(.clka(clk_25MHz), .addra(pixel_addr), .douta(pixel));
 
 always @(*) begin
-    
+    pixel_addr = (h_cnt | 5'b11111) + 32 * (v_cnt | 5'b11111);
+end
+
+always @(*) begin
+    if (valid)
+        final_pixel = pixel;
+    else
+        final_pixel = 0;
 end
 
 endmodule
