@@ -7,14 +7,10 @@ module FPGAs(
     output vsync
 );
 
-wire clk_25MHz, vaild;
-wire [9:0] h_cnt, v_cnt;
+wire clk_25MHz;
 
 clock_divider clock_divider_25(.clk(clk), .clk_div(clk_25MHz));
-vga_controller VGA(.pclk(clk_25MHz), .reset(rst), .hsync(hsync), .vsync(vsync), 
-                    .valid(valid), .h_cnt(h_cnt), .v_cnt(v_cnt));
-
-
+VGA VGA(.clk_25MHz(clk_25MHz), .pixel({vgaRed, vgaGreen, vgaBlue}), .hsync(hsync), .vsync(vsync));
 
 
 endmodule
