@@ -10,14 +10,13 @@ module FPGAs(
 
 integer i, j;
 
-wire clk_25MHz, vaild;
+wire clk_25MHz;
 wire [9:0] h_cnt, v_cnt;
 reg [3:0] pic_num [0:19] [0:14];  
 
 clock_divider clock_divider_25(.clk(clk), .clk_div(clk_25MHz));
-
-vga_controller VGA(.pclk(clk_25MHz), .reset(rst), .hsync(hsync), .vsync(vsync), 
-                    .valid(valid), .h_cnt(h_cnt), .v_cnt(v_cnt));
+                    
+vga VGA(.clk_25MHz(clk_25MHz), .final_pixel({vgaRed, vgaGreen, vgaBlue}), .hsync(hsync), .vsync(vsync));
 
 always @(*) begin
     if(rst)
