@@ -23,7 +23,7 @@ vga_controller VGA(.pclk(clk_25MHz), .reset(rst), .hsync(hsync), .vsync(vsync),
 blk_mem_gen_0 blk_mem_gen_0_inst(.clka(clk_25MHz), .addra(pixel_addr), .douta(pixel));
 
 always @(*) begin
-    pixel_addr = (h_cnt | 5'b11111) + 32 * (v_cnt | 5'b11111);
+    pixel_addr = (h_cnt & 5'b11111) + 32 * (v_cnt & 5'b11111);
 end
 
 always @(*) begin
