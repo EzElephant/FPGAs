@@ -14,16 +14,25 @@ module vga(
 wire valid;
 wire [9:0] h_cnt, v_cnt;
 wire [11:0] pixel;
-reg [12:0] pixel_addr;
+reg [13:0] pixel_addr;
+reg [8:0] map_addr;
+reg [3:0] write_texture_num;
+wire [3:0] texture_num;
 
 
 vga_controller VGA(.pclk(clk_25MHz), .reset(rst), .hsync(hsync), .vsync(vsync), 
                     .valid(valid), .h_cnt(h_cnt), .v_cnt(v_cnt));
 
 blk_mem_gen_0 blk_mem_gen_0_inst(.clka(clk_25MHz), .addra(pixel_addr), .douta(pixel));
+blk_mem_gen_1 map_num(.clka(clk_25MHz), .addra(map_addr), .wea(1'b0), .dina(write_texture_num), .douta(texture_num));
+
+// map_addr
+always @(*) begin
+    map_addr = (h_cnt >> 5) + 20 * (v_cnt >> 5);
+end
 
 always @(*) begin
-    pixel_addr = (h_cnt & 5'b11111) + 32 * (v_cnt & 5'b11111);
+    pixel_addr = (h_cnt & 5'b11111) + 32 * ((v_cnt & 5'b11111) + texture_num * 32);
 end
 
 always @(*) begin
