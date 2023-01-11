@@ -79,32 +79,32 @@ create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_
 # set_property IOSTANDARD LVCMOS33 [get_ports {motorLED[2]}]
 
 # 7 segment display
-#  set_property PACKAGE_PIN W7 [get_ports {DISPLAY[0]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[0]}]
-#  set_property PACKAGE_PIN W6 [get_ports {DISPLAY[1]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[1]}]
-#  set_property PACKAGE_PIN U8 [get_ports {DISPLAY[2]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[2]}]
-#  set_property PACKAGE_PIN V8 [get_ports {DISPLAY[3]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[3]}]
-#  set_property PACKAGE_PIN U5 [get_ports {DISPLAY[4]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[4]}]
-#  set_property PACKAGE_PIN V5 [get_ports {DISPLAY[5]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[5]}]
-#  set_property PACKAGE_PIN U7 [get_ports {DISPLAY[6]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[6]}]
+ set_property PACKAGE_PIN W7 [get_ports {DISPLAY[0]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[0]}]
+ set_property PACKAGE_PIN W6 [get_ports {DISPLAY[1]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[1]}]
+ set_property PACKAGE_PIN U8 [get_ports {DISPLAY[2]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[2]}]
+ set_property PACKAGE_PIN V8 [get_ports {DISPLAY[3]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[3]}]
+ set_property PACKAGE_PIN U5 [get_ports {DISPLAY[4]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[4]}]
+ set_property PACKAGE_PIN V5 [get_ports {DISPLAY[5]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[5]}]
+ set_property PACKAGE_PIN U7 [get_ports {DISPLAY[6]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DISPLAY[6]}]
 
 # set_property PACKAGE_PIN V7 [get_ports dp]
 #    set_property IOSTANDARD LVCMOS33 [get_ports dp]
 
-#  set_property PACKAGE_PIN U2 [get_ports {DIGIT[0]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DIGIT[0]}]
-#  set_property PACKAGE_PIN U4 [get_ports {DIGIT[1]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DIGIT[1]}]
-#  set_property PACKAGE_PIN V4 [get_ports {DIGIT[2]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DIGIT[2]}]
-#  set_property PACKAGE_PIN W4 [get_ports {DIGIT[3]}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {DIGIT[3]}]
+ set_property PACKAGE_PIN U2 [get_ports {DIGIT[0]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DIGIT[0]}]
+ set_property PACKAGE_PIN U4 [get_ports {DIGIT[1]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DIGIT[1]}]
+ set_property PACKAGE_PIN V4 [get_ports {DIGIT[2]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DIGIT[2]}]
+ set_property PACKAGE_PIN W4 [get_ports {DIGIT[3]}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {DIGIT[3]}]
 #===========================================
 # 7 segment display
 #  set_property PACKAGE_PIN W7 [get_ports {DISPLAY[0]}]
@@ -151,18 +151,17 @@ create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_
 
 
 ## Pmod Header JA
-## Sch name = JA1
-#  set_property PACKAGE_PIN J1 [get_ports {IN1}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {IN1}]
-# ## Sch name = JA2
-#  set_property PACKAGE_PIN L2 [get_ports {IN2}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {IN2}]
-# ## Sch name = JA3
-#  set_property PACKAGE_PIN J2 [get_ports {IN3}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {IN3}]
-# ## Sch name = JA4
-#  set_property PACKAGE_PIN G2 [get_ports {IN4}]
-#     set_property IOSTANDARD LVCMOS33 [get_ports {IN4}]
+set_property PACKAGE_PIN J1 [get_ports {SS}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {SS}]
+#Sch name = JA2
+set_property PACKAGE_PIN L2 [get_ports {MOSI}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {MOSI}]
+#Sch name = JA3
+set_property PACKAGE_PIN J2 [get_ports {MISO}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {MISO}]
+#Sch name = JA4
+set_property PACKAGE_PIN G2 [get_ports {SCLK}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {SCLK}]
 # ## Sch name = JA7
 #  set_property PACKAGE_PIN H1 [get_ports {left_pwm}]
 #     set_property IOSTANDARD LVCMOS33 [get_ports {left_pwm}]
