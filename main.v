@@ -37,6 +37,7 @@ reg [8:0] write_count, next_write_count;
 reg [8:0] scroll_x, scroll_y, next_scroll_x, next_scroll_y;
 
 // animation counter
+reg [19:0] offset_count;
 reg [3:0] animation_count;
 
 // record which block has character
@@ -73,11 +74,11 @@ LSFR random_gen(.clk(clk_div[23]), .rand_num(rand_test), .rst(rst));
 
 assign LED = rand_test;
 
-debounce cen_push(.clk(clk_div[15]), .pb(click), .pb_debounced(click_d));
-one_pulse cen_push_pulse(.clk(clk_div[15]), .pb_in(click_d), .pb_out(click_pulse));
+debounce cen_push(.clk(clk_div[1]), .pb(click), .pb_debounced(click_d));
+one_pulse cen_push_pulse(.clk(clk_div[1]), .pb_in(click_d), .pb_out(click_pulse));
 
-debounce down_push(.clk(clk_div[15]), .pb(down_click), .pb_debounced(down_click_d));
-one_pulse down_push_pulse(.clk(clk_div[15]), .pb_in(down_click_d), .pb_out(down_click_pulse));
+debounce down_push(.clk(clk_div[1]), .pb(down_click), .pb_debounced(down_click_d));
+one_pulse down_push_pulse(.clk(clk_div[1]), .pb_in(down_click_d), .pb_out(down_click_pulse));
 
 rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .SCLK(SCLK_1),
 .left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(click), .down_click(down_click));
@@ -130,9 +131,22 @@ always @(*) begin
         next_scroll_x = choose_x + 1;  
 end
 
+// offset counter for animation counter
+always @(posedge clk_div[1] or posedge down_click_pulse) begin
+    if(rst || down_click_pulse)
+        offset_count <= 0;
+    else
+        offset_count <= offset_count + 1;
+end
+
 // animation counter
-always @(posedge clk_div[21]) begin
-    animation_count <= animation_count + 1;
+always @(posedge clk_div[1] or posedge down_click_pulse) begin
+    if(down_click_pulse && player_state == attack)
+        animation_count <= 1;
+    else if(offset_count == 20'b1111_1111_1111_1111_1111)
+        animation_count <= animation_count + 1;
+    else
+        animation_count <= animation_count;
 end
 
 
@@ -172,7 +186,7 @@ always @(*) begin
                 else    // attack
                     next_player_state = idle;
             else
-                if(monster_state == 0)  // idle
+                if(action_pos == knight_pos)  // idle
                     next_player_state = move;
                 else
                     next_player_state = idle;
@@ -240,7 +254,7 @@ end
 // monster_state
 always @(posedge clk_div[1]) begin
     if(rst)
-        monster_state <= idle;
+        monster_state <= 0;
     else 
         monster_state <= next_monster_state;
 end
@@ -270,8 +284,29 @@ always @(posedge clk_div[1]) begin
 end
 
 always @(*) begin
-    action_pos = knight_pos;
+    if(action_pos == knight_pos)
+        if(down_click_pulse && player_state == move)
+            next_action_pos = wizard_pos;
+        else if(knight_state == attack && animation_count == 0)
+            next_action_pos = wizard_pos;
+        else
+            next_action_pos = knight_pos;
+    else if(action_pos == wizard_pos)
+        if(down_click_pulse && player_state == move)
+            next_action_pos = 0;
+        else if(wizard_state == attack && animation_count == 0)
+            next_action_pos = 0;
+        else
+            next_action_pos = wizard_pos;
+    else    // 0 for monster 
+        if(animation_count == 15)
+            next_action_pos = knight_pos;
+        else
+            next_action_pos = 0;
 end
+
+// TODO...
+// knight_pos blablabla...
 
 endmodule
 

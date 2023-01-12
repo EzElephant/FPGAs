@@ -50,7 +50,7 @@ always @(*) begin
 end
 
 
-always @(posedge clk_div) begin
+always @(posedge clk) begin
     pre_x <= x;
     pre_y <= y;
     if (rst) begin

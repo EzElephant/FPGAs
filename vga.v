@@ -46,10 +46,10 @@ parameter idle = 2'b11;
 // view starting point
 // reg [x:0] start;
 
-reg [8:0] skeleton_pos [3:0];
-reg [8:0] eye_pos [3:0];
-reg [8:0] goblin_pos [3:0];
-reg [8:0] mushroom_pos [3:0];
+reg [8:0] skeleton_pos [0:3];
+reg [8:0] eye_pos [0:3];
+reg [8:0] goblin_pos [0:3];
+reg [8:0] mushroom_pos [0:3];
 
 // animation frames
 reg [2:0] knight_anim_num, next_knight_anim;
@@ -145,38 +145,120 @@ always @(*) begin
         else
             first_layer_pixel = pixel;
     else
-        for(i = 0;i < 4;i = i + 1) begin
-            if(map_addr == skeleton_pos[i])
-                if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                    first_layer_pixel = 12'hE00;    // TODO
-                else if(skeleton_pixel != 12'h000)
-                    first_layer_pixel = skeleton_pixel;
-                else
-                    first_layer_pixel = pixel;
-            else if(map_addr == eye_pos[i])
-                if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                    first_layer_pixel = 12'hE00;    // TODO
-                else if(eye_pixel != 12'h000)
-                    first_layer_pixel = eye_pixel;
-                else
-                    first_layer_pixel = pixel;
-            else if(map_addr == goblin_pos[i])
-                if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                    first_layer_pixel = 12'hE00;    // TODO
-                else if(goblin_pixel != 12'h000)
-                    first_layer_pixel = goblin_pixel;
-                else
-                    first_layer_pixel = pixel;
-            else if(map_addr == mushroom_pos[i])
-                if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                    first_layer_pixel = 12'hE00;    // TODO
-                else if(mushroom_pixel != 12'h000)
-                    first_layer_pixel = mushroom_pixel;
-                else
-                    first_layer_pixel = pixel;
+        if(map_addr == skeleton_pos[0])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(skeleton_pixel != 12'h000)
+                first_layer_pixel = skeleton_pixel;
             else
                 first_layer_pixel = pixel;
-        end
+        else if(map_addr == eye_pos[0])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(eye_pixel != 12'h000)
+                first_layer_pixel = eye_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == goblin_pos[0])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(goblin_pixel != 12'h000)
+                first_layer_pixel = goblin_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == mushroom_pos[0])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(mushroom_pixel != 12'h000)
+                first_layer_pixel = mushroom_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == skeleton_pos[1])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(skeleton_pixel != 12'h000)
+                first_layer_pixel = skeleton_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == eye_pos[1])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(eye_pixel != 12'h000)
+                first_layer_pixel = eye_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == goblin_pos[1])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(goblin_pixel != 12'h000)
+                first_layer_pixel = goblin_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == mushroom_pos[1])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(mushroom_pixel != 12'h000)
+                first_layer_pixel = mushroom_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == skeleton_pos[2])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(skeleton_pixel != 12'h000)
+                first_layer_pixel = skeleton_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == eye_pos[2])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(eye_pixel != 12'h000)
+                first_layer_pixel = eye_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == goblin_pos[2])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(goblin_pixel != 12'h000)
+                first_layer_pixel = goblin_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == mushroom_pos[2])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(mushroom_pixel != 12'h000)
+                first_layer_pixel = mushroom_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == skeleton_pos[3])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(skeleton_pixel != 12'h000)
+                first_layer_pixel = skeleton_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == eye_pos[3])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(eye_pixel != 12'h000)
+                first_layer_pixel = eye_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == goblin_pos[3])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(goblin_pixel != 12'h000)
+                first_layer_pixel = goblin_pixel;
+            else
+                first_layer_pixel = pixel;
+        else if(map_addr == mushroom_pos[3])
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                first_layer_pixel = 12'hE00;    // TODO
+            else if(mushroom_pixel != 12'h000)
+                first_layer_pixel = mushroom_pixel;
+            else
+                first_layer_pixel = pixel;
+        else
+            first_layer_pixel = pixel;        
 end
 
 // final_pixel
