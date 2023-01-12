@@ -23,53 +23,103 @@
 
 module music(
     input clk,
+    input clk_25MHz,
+    input clk_div,
     input rst,
+    input [2:0] effect_control,
     input _volUP,
     input _volDOWN,
-    input _higherOCT,
-    input _lowerOCT,
     output audio_mclk, // master clock
     output audio_lrck, // left-right clock
     output audio_sck,  // serial clock
     output audio_sdin  // serial audio data input
 );
-integer i;
 
+parameter BGM = 0;
+parameter EFFECT = 1;
+
+wire mute;
 wire [15:0] audio_in_left, audio_in_right;
 
 reg [31:0] freqL, freqR;
 reg [21:0] freq_outL, freq_outR;
-reg [2:0] vol, next_vol, oct, next_oct;
+reg [12:0] bgm_counter, next_bgm_counter, effect_counter, next_effect_counter;
+reg [2:0] vol, next_vol, music_state, next_music_state;
+
+blk_mem_gen_msuic0 bgm(.clka(clk_25MHz), .addra(bgm_counter), .douta(bgm_freq));
+blk_mem_gen_msuic0 effect(.clka(clk_25MHz), .addra(effect_counter), .douta(effect_freq));
 
 always @(posedge clk) begin
     if (rst) begin
-        vol <= 1;
-        oct <= 1;
+        music_state <= BGM;
     end
     else begin
-        vol <= next_vol;
-        oct <= next_oct;
+        music_state <= next_music_state;
+    end
+end
+
+always @(posedge clk_div or posedge rst) begin
+    if (rst) begin
+        bgm_counter <= 0;
+        effect_counter <= 0;
+    end
+    else begin
+        bgm_counter <= next_bgm_counter;
+        effect_counter <= next_effect_counter;
     end
 end
 
 always @(*) begin
-    case (oct)
-        1:
-        begin
-            freq_outL = 50000000 / (freqL >> 1);
-            freq_outR = 50000000 / (freqR >> 1);
+    next_music_state = music_state;
+    case (music_state)
+        BGM: begin
+            if (effect_control == 1)
+                next_music_state = EFFECT;
+            freqL =  bgm_freq;
+            freqR = bgm_freq;
         end
-        2:
-        begin
-            freq_outL = 50000000 / freqL;
-            freq_outR = 50000000 / freqR;
-        end
-        3:
-        begin
-            freq_outL = 50000000 / (freqL << 1);
-            freq_outR = 50000000 / (freqR << 1);
+        EFFECT: begin
+            if (effect_counter == 9487)
+                next_music_state = BGM;
+            freqL =  effect_freq;
+            freqR = effect_freq;
         end
     endcase
+end
+
+always @(*) begin
+    if (bgm_counter == 9487)
+        next_bgm_counter = 0;
+    else
+        next_bgm_counter = bgm_counter + 1;
+
+    if (music_state == BGM)
+        next_effect_counter = 0;
+    else
+        next_effect_counter = effect_counter + 1;
+end
+
+always @(posedge clk) begin
+    if (rst) begin
+        vol <= 1;
+    end
+    else begin
+        vol <= next_vol;
+    end
+end
+
+always @(*) begin
+    if (_volUP && vol != 5)
+        next_vol = vol + 1;
+    if (_volDOWN && vol != 0)
+        next_vol = vol - 1;
+end
+
+assign mute = (vol == 0);
+
+always @(*) begin
+    freq_outL = 50000000 / freqL;
+    freq_outR = 50000000 / freqR;
 end
 
 note_gen noteGen_00(
