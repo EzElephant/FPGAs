@@ -25,6 +25,38 @@ ports : addra[12:0]
         clka
         douta[11:0]
 
+This one is for skeleton sprites
+blk_mem_gen_4
+width : 12 bits (RGB)
+depth : 6144 (32 * 192)
+ports : addra[12:0]
+        clka
+        douta[11:0]
+
+This one is for eye sprites
+blk_mem_gen_5
+width : 12 bits (RGB)
+depth : 6144 (32 * 192)
+ports : addra[12:0]
+        clka
+        douta[11:0]
+
+This one is for goblin sprites
+blk_mem_gen_6
+width : 12 bits (RGB)
+depth : 6144 (32 * 192)
+ports : addra[12:0]
+        clka
+        douta[11:0]
+
+This one is for mushroom sprites
+blk_mem_gen_7
+width : 12 bits (RGB)
+depth : 6144 (32 * 192)
+ports : addra[12:0]
+        clka
+        douta[11:0]
+
 # for block memory (RAM)
 This one is for map index
 blk_mem_gen_1

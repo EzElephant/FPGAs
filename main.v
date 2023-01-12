@@ -15,24 +15,70 @@ module FPGAs(
     output [3:0] DIGIT
 );
 
+parameter move = 2'b00;
+parameter attack = 2'b01;
+parameter hit = 2'b10;
+parameter idle = 2'b11;
+
 wire  move_left, move_right, move_up, move_down;
+wire click, down_click;
+wire click_d, down_click_d;
+wire click_pulse, down_click_pulse;
 wire [26:0] clk_div;
 wire [7:0] rand_test;
 wire [4:0] i, j;
 reg [4:0] choose_x, choose_y,next_choose_x, next_choose_y;
 reg [8:0] write_count, next_write_count;
 
+// animation counter
+reg [3:0] animation_count;
+
+// record which block has character
+// in 20 * 15 map, 0 for h_cnt, 1 for v_cnt
+reg [8:0] action_pos, next_action_pos;
+wire [8:0] selected_pos;
+reg [8:0] knight_pos = 125; 
+reg [8:0] wizard_pos = 167;
+
+reg [1:0] player_state, next_player_state;
+reg [1:0] knight_state, next_knight_state;
+reg [1:0] wizard_state, next_wizard_state;
+reg monster_state, next_monster_state;
+
 clock_divider clock_divider_25(.clk(clk), .clk_div(clk_div));
                     
-vga VGA(.clk_25MHz(clk_div[1]), .anim_clk(clk_div[21]), .final_pixel({vgaRed, vgaGreen, vgaBlue}), .hsync(hsync), .vsync(vsync));
+vga VGA(.clk_25MHz(clk_div[1]),
+        .animation_count(animation_count),
+        .player_state(player_state),
+        .knight_state(knight_state),
+        .wizard_state(wizard_state),
+        .monster_state(monster_state),
+        .action_pos(action_pos),
+        .selected_pos(selected_pos),
+        .knight_pos(knight_pos),
+        .wizard_pos(wizard_pos),
+        .final_pixel({vgaRed, vgaGreen, vgaBlue}), 
+        .hsync(hsync), 
+        .vsync(vsync)
+);
+
+
 LSFR random_gen(.clk(clk_div[23]), .rand_num(rand_test), .rst(rst));
 
 assign LED = rand_test;
 
 rocker rocker1(.clk(clk), .rst(rst), .MISO(MISO), .SS(SS), .MOSI(MOSI), .SCLK(SCLK),
-.left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(), .down_click());
+.left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(click), .down_click(down_click));
+
+debounce cen_push(.clk(clk_div[15]), .pb(click), .pb_debounced(click_d));
+one_pulse cen_push_pulse(.clk(clk_div[15]), .pb_in(click_d), .pb_one_pulse(click_pulse));
+
+debounce down_push(.clk(clk_div[15]), .pb(down_click), .pb_debounced(down_click_d));
+one_pulse down_push_pulse(.clk(clk_div[15]), .pb_in(down_click_d), .pb_one_pulse(down_click_pulse));
 
 seven_segment Seven_segment(.clk_div(clk_div[15]), .data0(choose_x), .data1(choose_y), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
+
+assign selected_pos = ({4'b0000, choose_y} * 20) + {4'b0000, choose_x};
 
 always @(posedge clk) begin
     if (rst) begin
@@ -57,6 +103,150 @@ always @(*) begin
     if (move_right && choose_x != 19)
         next_choose_x = choose_x + 1;  
 end
+
+// animation counter
+always @(posedge clk_div[21]) begin
+    animation_count <= animation_count + 1;
+end
+
+
+// player FSM
+always @(posedge clk_div[1]) begin
+    if(rst)
+        player_state <= move;
+    else
+        player_state <= next_player_state;
+end
+
+always @(*) begin
+    case(player_state)
+        move:
+            if(click_pulse)
+                next_player_state = attack;
+            else if(down_click_pulse)   // for round finish
+                next_player_state = idle;
+            else
+                next_player_state = move;
+        attack:
+            if(click_pulse)
+                next_player_state = move;
+            else if(down_click_pulse)
+                next_player_state = idle;
+            else
+                next_player_state = attack;
+        default:
+            if(action_pos == knight_pos)
+                if(knight_state == idle)   // idle
+                    next_player_state = move;
+                else    // attack
+                    next_player_state = idle;
+            else if(action_pos == wizard_pos)
+                if(wizard_state == idle)   // idle
+                    next_player_state = move;
+                else    // attack
+                    next_player_state = idle;
+            else
+                if(monster_state == 0)  // idle
+                    next_player_state = move;
+                else
+                    next_player_state = idle;
+    endcase 
+end
+
+// knight_state
+always @(posedge clk_div[1]) begin
+    if(rst)
+        knight_state <= idle;
+    else 
+        knight_state <= next_knight_state;
+end
+
+always @(*) begin
+    if(wizard_state == hit)
+        next_knight_state = hit;
+    else if(knight_state == idle)
+        if(action_pos == knight_pos && down_click_pulse && player_state == attack)
+            next_knight_state = attack;
+        else
+            next_knight_state = idle;
+    else if(knight_state == attack)
+        if(animation_count == 0)
+            next_knight_state = idle;
+        else
+            next_knight_state = attack;
+    else    // knight_state = hit
+        if(monster_state == 0)
+            next_knight_state = idle;
+        else
+            next_knight_state = hit;
+end
+
+// wizard_state
+always @(posedge clk_div[1]) begin
+    if(rst)
+        wizard_state <= idle;
+    else 
+        wizard_state <= next_wizard_state;
+end
+
+always @(*) begin
+    case(wizard_state)
+        idle:
+            if(action_pos == wizard_pos && down_click_pulse && player_state == attack)
+                next_wizard_state = attack;
+            else if(action_pos == wizard_pos && down_click_pulse)
+                next_wizard_state = hit;
+            else
+                next_wizard_state = idle;
+        attack:
+            if(animation_count == 0)
+                next_wizard_state = hit;
+            else
+                next_wizard_state = attack;
+        default:
+            if(monster_state == 0)
+                next_wizard_state = idle;
+            else
+                next_wizard_state = hit;
+    endcase
+end
+
+// monster_state
+always @(posedge clk_div[1]) begin
+    if(rst)
+        monster_state <= idle;
+    else 
+        monster_state <= next_monster_state;
+end
+
+always @(*) begin
+    case(monster_state)
+        0:  // idle
+            if(wizard_state == hit)
+                next_monster_state = 1;
+            else
+                next_monster_state = 0;
+        1:  // attack
+            if(animation_count == 15)
+                next_monster_state = 0;
+            else    
+                next_monster_state = 1;
+    endcase
+end
+
+// TODO...
+// action character position
+always @(posedge clk_div[1]) begin
+    if(rst)
+        action_pos <= knight_pos;
+    else
+        action_pos <= next_action_pos;
+end
+
+always @(*) begin
+    action_pos = knight_pos;
+end
+  
 
 endmodule
 

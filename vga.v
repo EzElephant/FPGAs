@@ -6,7 +6,15 @@
 
 module vga(
     input clk_25MHz,
-    input anim_clk,
+    input [3:0] animation_count,
+    input [1:0] player_state,
+    input [1:0] knight_state,
+    input [1:0] wizard_state,
+    input monster_state,
+    input [8:0] action_pos,
+    input [8:0] selected_pos,
+    input [8:0] knight_pos,
+    input [8:0] wizard_pos,
     output reg [11:0] final_pixel,
     output hsync,
     output vsync
@@ -17,30 +25,39 @@ wire [9:0] h_cnt, v_cnt;
 wire [11:0] pixel;
 wire [11:0] knight_pixel;
 wire [11:0] wizard_pixel;
+wire [11:0] skeleton_pixel;
+wire [11:0] eye_pixel;
+wire [11:0] goblin_pixel;
+wire [11:0] mushroom_pixel;
 reg [11:0] first_layer_pixel;
 reg [13:0] pixel_addr;
 reg [12:0] knight_addr;
 reg [12:0] wizard_addr;
+reg [12:0] monster_addr;
 reg [8:0] map_addr;
 reg [3:0] write_texture_num;
 wire [3:0] texture_num;
 
+parameter move = 2'b00;
+parameter attack = 2'b01;
+parameter hit = 2'b10;
+parameter idle = 2'b11;
+
 // view starting point
 // reg [x:0] start;
 
-// record which block has knight
-// in 20 * 15 map, 0 for h_cnt, 1 for v_cnt
-reg [8:0] action_pos;
-reg [8:0] selected_pos = 125;
-reg [8:0] knight_pos = 125; 
-reg [8:0] wizard_pos = 167;
-
-// animation counter
-reg [3:0] animation_count;
+reg [8:0] skeleton_pos [3:0];
+reg [8:0] eye_pos [3:0];
+reg [8:0] goblin_pos [3:0];
+reg [8:0] mushroom_pos [3:0];
 
 // animation frames
 reg [2:0] knight_anim_num, next_knight_anim;
 reg [2:0] wizard_anim_num, next_wizard_anim;
+reg [2:0] monster_anim_num, next_monster_anim;
+
+// integers
+integer i;
 
 
 vga_controller VGA(.pclk(clk_25MHz), .reset(rst), .hsync(hsync), .vsync(vsync), 
@@ -50,6 +67,36 @@ blk_mem_gen_0 blk_mem_gen_0_inst(.clka(clk_25MHz), .addra(pixel_addr), .douta(pi
 blk_mem_gen_1 map_num(.clka(clk_25MHz), .addra(map_addr), .wea(1'b0), .dina(write_texture_num), .douta(texture_num));
 blk_mem_gen_2 knight_num(.clka(clk_25MHz), .addra(knight_addr), .douta(knight_pixel));
 blk_mem_gen_3 wizard_num(.clka(clk_25MHz), .addra(wizard_addr), .douta(wizard_pixel));
+blk_mem_gen_4 skeleton_num(.clka(clk_25MHz), .addra(monster_addr), .douta(skeleton_pixel));
+blk_mem_gen_5 eye_num(.clka(clk_25MHz), .addra(monster_addr), .douta(eye_pixel));
+blk_mem_gen_6 goblin_num(.clka(clk_25MHz), .addra(monster_addr), .douta(goblin_pixel));
+blk_mem_gen_7 mushroom_num(.clka(clk_25MHz), .addra(monster_addr), .douta(mushroom_pixel));
+
+// attach gamecontrol module or that part here
+
+
+// write initial mob position... with a terrible way
+initial begin
+    skeleton_pos[3] = 63;
+    skeleton_pos[2] = 97;
+    skeleton_pos[1] = 94;
+    skeleton_pos[0] = 89;
+
+    eye_pos[3] = 144;
+    eye_pos[2] = 157;
+    eye_pos[1] = 149;
+    eye_pos[0] = 214;
+
+    goblin_pos[3] = 77;
+    goblin_pos[2] = 197;
+    goblin_pos[1] = 194;
+    goblin_pos[0] = 248;
+
+    mushroom_pos[3] = 137;
+    mushroom_pos[2] = 176;
+    mushroom_pos[1] = 256;
+    mushroom_pos[0] = 257;
+end
 
 
 // map_addr
@@ -67,6 +114,11 @@ always @(*) begin
     wizard_addr = (h_cnt & 5'b11111) + 32 * ((v_cnt & 5'b11111) + wizard_anim_num * 32);
 end
 
+// monster addr
+always @(*) begin 
+    monster_addr = (h_cnt & 5'b11111) + 32 * ((v_cnt & 5'b11111) + monster_anim_num * 32);
+end
+
 // background addr
 always @(*) begin
     pixel_addr = (h_cnt & 5'b11111) + 32 * ((v_cnt & 5'b11111) + texture_num * 32);
@@ -75,47 +127,121 @@ end
 // first_layer
 always @(*) begin
     if(map_addr == knight_pos)
-        if((v_cnt & 5'b11111) < 2)  // 2 pixel for blood
-            first_layer_pixel = 12'hB00;
+        if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+            first_layer_pixel = 12'hE00;    // TODO
+        else if(knight_pixel != 12'h000 && knight_state == hit && animation_count > 12)
+            first_layer_pixel = knight_pixel + 12'h100;
         else if(knight_pixel != 12'h000)
             first_layer_pixel = knight_pixel;
         else
             first_layer_pixel = pixel;
     else if(map_addr == wizard_pos)
-        if((v_cnt & 5'b11111) < 2)  // 2 pixel for blood
-            first_layer_pixel = 12'hB00;
+        if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+            first_layer_pixel = 12'hE00;    // TODO
+        else if(wizard_pixel != 12'h000 && wizard_state == hit && animation_count > 12)
+            first_layer_pixel = wizard_pixel + 12'h100;
         else if(wizard_pixel != 12'h000)
             first_layer_pixel = wizard_pixel;
         else
             first_layer_pixel = pixel;
     else
-        first_layer_pixel = pixel;
+        for(i = 0;i < 4;i = i + 1) begin
+            if(map_addr == skeleton_pos[i])
+                if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                    first_layer_pixel = 12'hE00;    // TODO
+                else if(skeleton_pixel != 12'h000)
+                    first_layer_pixel = skeleton_pixel;
+                else
+                    first_layer_pixel = pixel;
+            else if(map_addr == eye_pos[i])
+                if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                    first_layer_pixel = 12'hE00;    // TODO
+                else if(eye_pixel != 12'h000)
+                    first_layer_pixel = eye_pixel;
+                else
+                    first_layer_pixel = pixel;
+            else if(map_addr == goblin_pos[i])
+                if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                    first_layer_pixel = 12'hE00;    // TODO
+                else if(goblin_pixel != 12'h000)
+                    first_layer_pixel = goblin_pixel;
+                else
+                    first_layer_pixel = pixel;
+            else if(map_addr == mushroom_pos[i])
+                if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
+                    first_layer_pixel = 12'hE00;    // TODO
+                else if(mushroom_pixel != 12'h000)
+                    first_layer_pixel = mushroom_pixel;
+                else
+                    first_layer_pixel = pixel;
+            else
+                first_layer_pixel = pixel;
+        end
 end
 
 // final_pixel
 always @(*) begin
     if (valid)
-        // if this block has player
+        // selected block
         if(map_addr == selected_pos)
-            if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
-                final_pixel = 12'h4Af;
-            else
-                final_pixel = first_layer_pixel + 12'h010;
-        else
-            final_pixel = first_layer_pixel;
+            case(player_state)
+                move:  // selected block for movement
+                    if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                        final_pixel = 12'h4Af;
+                    else
+                        final_pixel = first_layer_pixel + 12'h010;
+                attack:  // selected block for attack
+                    if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                        final_pixel = 12'hF22;
+                    else
+                        final_pixel = first_layer_pixel + 12'h100;
+                default:
+                    final_pixel = first_layer_pixel;
+            endcase
+        else if(action_pos == knight_pos)   // select range for knight
+            case(player_state)
+                move:  // move
+                    if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 20 || map_addr == action_pos + 20) && texture_num < 3)   // 4-direction
+                        if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                            final_pixel = 12'h4Af;
+                        else
+                            final_pixel = first_layer_pixel;
+                    else
+                        final_pixel = first_layer_pixel;
+                attack:  // attack
+                    if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 20 || map_addr == action_pos + 20) && texture_num < 3)   // 4-direction
+                        if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                            final_pixel = 12'hF22;
+                        else
+                            final_pixel = first_layer_pixel;
+                    else
+                        final_pixel = first_layer_pixel;
+                default:
+                    final_pixel = first_layer_pixel;
+            endcase
+        else    // select range for wizard
+            case(player_state)
+                move:  // move
+                    if((map_addr / 20 == action_pos / 20 || map_addr % 20 == action_pos % 20) && texture_num < 3)   // 大十字
+                        if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                            final_pixel = 12'h4Af;
+                        else
+                            final_pixel = first_layer_pixel;
+                    else
+                        final_pixel = first_layer_pixel;
+                attack:  // attack
+                    if((map_addr / 20 == action_pos / 20 || map_addr % 20 == action_pos % 20) && texture_num < 3)   
+                        if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                            final_pixel = 12'hF22;
+                        else
+                            final_pixel = first_layer_pixel;
+                    else
+                        final_pixel = first_layer_pixel;
+                default:
+                    final_pixel = first_layer_pixel;
+            endcase
     else
         final_pixel = 0;
-end
-
-// TODO...
-// action character position
-always @(posedge clk_25MHz) begin
-    action_pos <= knight_pos;
-end
-
-// animation counter
-always @(posedge anim_clk) begin
-    animation_count <= animation_count + 1;
 end
 
 // knight animation num
@@ -124,22 +250,22 @@ always @(posedge clk_25MHz) begin
 end
 
 always @(*) begin
-    // case(state)
-    //     attack:
-                // if(animation_count < 4)
-                //     next_knight_anim = 2;
-                // else if(animation_count < 8)
-                //     next_knight_anim = 3;
-                // else if(animation_count < 12)
-                //     next_knight_anim = 4;
-                // else 
-                //     next_knight_anim = 5;
-    //     idle:
+    case(knight_state)
+        attack:
+                if(animation_count < 4)
+                    next_knight_anim = 2;
+                else if(animation_count < 8)
+                    next_knight_anim = 3;
+                else if(animation_count < 12)
+                    next_knight_anim = 4;
+                else 
+                    next_knight_anim = 5;
+        default:
                 if(animation_count < 8)
                     next_knight_anim = 0;
                 else 
                     next_knight_anim = 1;
-    // endcase
+    endcase
 end
 
 // wizard animation num
@@ -148,23 +274,51 @@ always @(posedge clk_25MHz) begin
 end
 
 always @(*) begin
-    // case(state)
-    //     attack:
+    case(wizard_state)
+        attack:
                 // anim_num 2~6
-                // if(animation_count < 4)
-                //     next_wizard_anim = 2;
-                // else if(animation_count < 8)
-                //     next_wizard_anim = 3;
-                // else if(animation_count < 12)
-                //     next_wizard_anim = 4;
-                // else 
-                //     next_wizard_anim = 5;
-    //     idle:
+                if(animation_count < 3)
+                    next_wizard_anim = 2;
+                else if(animation_count < 6)
+                    next_wizard_anim = 3;
+                else if(animation_count < 9)
+                    next_wizard_anim = 4;
+                else if(animation_count < 12)
+                    next_wizard_anim = 5;
+                else
+                    next_wizard_anim = 6;
+        default:
                 if(animation_count < 8)
                     next_wizard_anim = 0;
                 else 
                     next_wizard_anim = 1;
-    // endcase
+    endcase
+end
+
+// monster animation num
+always @(posedge clk_25MHz) begin
+    monster_anim_num <= next_monster_anim;
+end
+
+always @(*) begin
+    case(monster_state)
+        attack:
+                if(animation_count < 4)
+                    next_monster_anim = 2;
+                else if(animation_count < 8)
+                    next_monster_anim = 3;
+                else if(animation_count < 12)
+                    next_monster_anim = 4;
+                else if(animation_count < 15)
+                    next_monster_anim = 5;
+                else
+                    next_monster_anim = 0;
+        default:
+                if(animation_count < 8)
+                    next_monster_anim = 0;
+                else 
+                    next_monster_anim = 1;
+    endcase
 end
 
 
