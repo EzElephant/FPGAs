@@ -1,10 +1,14 @@
 module FPGAs(
     input clk,
     input rst,
-    input MISO,
-    output SS,
-    output MOSI,
-    output SCLK,
+    input MISO_1,
+    input MISO_2,
+    output SS_1,
+    output SS_2,
+    output MOSI_1,
+    output MOSI_2,
+    output SCLK_1,
+    output SCLK_2,
     output [3:0] vgaRed,
     output [3:0] vgaGreen,
     output [3:0] vgaBlue,
@@ -20,15 +24,17 @@ parameter attack = 2'b01;
 parameter hit = 2'b10;
 parameter idle = 2'b11;
 
-wire  move_left, move_right, move_up, move_down;
 wire click, down_click;
 wire click_d, down_click_d;
 wire click_pulse, down_click_pulse;
+wire move_left, move_right, move_up, move_down;
+wire scroll_left, scroll_right, scroll_up, scroll_down;
 wire [26:0] clk_div;
 wire [7:0] rand_test;
 wire [4:0] i, j;
-reg [4:0] choose_x, choose_y,next_choose_x, next_choose_y;
+reg [4:0] choose_x, choose_y, next_choose_x, next_choose_y;
 reg [8:0] write_count, next_write_count;
+reg [8:0] scroll_x, scroll_y, next_scroll_x, next_scroll_y;
 
 // animation counter
 reg [3:0] animation_count;
@@ -67,14 +73,17 @@ LSFR random_gen(.clk(clk_div[23]), .rand_num(rand_test), .rst(rst));
 
 assign LED = rand_test;
 
-rocker rocker1(.clk(clk), .rst(rst), .MISO(MISO), .SS(SS), .MOSI(MOSI), .SCLK(SCLK),
-.left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(click), .down_click(down_click));
-
 debounce cen_push(.clk(clk_div[15]), .pb(click), .pb_debounced(click_d));
-one_pulse cen_push_pulse(.clk(clk_div[15]), .pb_in(click_d), .pb_one_pulse(click_pulse));
+one_pulse cen_push_pulse(.clk(clk_div[15]), .pb_in(click_d), .pb_out(click_pulse));
 
 debounce down_push(.clk(clk_div[15]), .pb(down_click), .pb_debounced(down_click_d));
-one_pulse down_push_pulse(.clk(clk_div[15]), .pb_in(down_click_d), .pb_one_pulse(down_click_pulse));
+one_pulse down_push_pulse(.clk(clk_div[15]), .pb_in(down_click_d), .pb_out(down_click_pulse));
+
+rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .SCLK(SCLK_1),
+.left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(click), .down_click(down_click));
+
+rocker2 rocker2(.clk(clk), .rst(rst), .MISO(MISO_2), .SS(SS_2), .MOSI(MOSI_2), .SCLK(SCLK_2),
+.left(scroll_right), .right(scroll_left), .up(scroll_up), .down(scroll_down), .click(), .down_click());
 
 seven_segment Seven_segment(.clk_div(clk_div[15]), .data0(choose_x), .data1(choose_y), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
 
@@ -84,10 +93,14 @@ always @(posedge clk) begin
     if (rst) begin
         choose_x <= 7;
         choose_y <= 7;
+        scroll_x <= 0;
+        scroll_y <= 0;
     end
     else begin
         choose_x <= next_choose_x;
         choose_y <= next_choose_y;
+        scroll_x <= next_scroll_x;
+        scroll_y <= next_scroll_y;
     end
 end
 
@@ -102,6 +115,19 @@ always @(*) begin
         next_choose_x = choose_x - 1;
     if (move_right && choose_x != 19)
         next_choose_x = choose_x + 1;  
+end
+
+always @(*) begin
+    next_scroll_x = scroll_x;
+    next_scroll_y = scroll_y;
+    if (scroll_up && choose_y != 0)
+        next_scroll_y = choose_y - 1;
+    if (scroll_down && choose_y != 480)
+        next_scroll_y = choose_y + 1;
+    if (scroll_left && choose_x != 0)
+        next_scroll_x = choose_x - 1;
+    if (scroll_right && choose_x != 640)
+        next_scroll_x = choose_x + 1;  
 end
 
 // animation counter
@@ -246,7 +272,6 @@ end
 always @(*) begin
     action_pos = knight_pos;
 end
-  
 
 endmodule
 
