@@ -1,10 +1,10 @@
 module FPGAs(
     input clk,
     input rst,
-    input move_left,
-    input move_right,
-    input move_up,
-    input move_down,
+    input MISO,
+    output SS,
+    output MOSI,
+    output SCLK,
     output [3:0] vgaRed,
     output [3:0] vgaGreen,
     output [3:0] vgaBlue,
@@ -15,7 +15,7 @@ module FPGAs(
     output [3:0] DIGIT
 );
 
-wire move_left_pulse, move_right_pulse, move_up_pulse, move_down_pulse;
+wire move_left, move_right, move_up, move_down;
 wire [26:0] clk_div;
 wire [7:0] rand_test;
 wire [4:0] i, j;
@@ -29,10 +29,8 @@ LSFR random_gen(.clk(clk_div[23]), .rand_num(rand_test), .rst(rst));
 
 assign LED = rand_test;
 
-special_one_pulse special_one_pulse_left(.clk(clk), .pb_in(move_left), .pb_out(move_left_pulse));
-special_one_pulse special_one_pulse_right(.clk(clk), .pb_in(move_right), .pb_out(move_right_pulse));
-special_one_pulse special_one_pulse_up(.clk(clk), .pb_in(move_up), .pb_out(move_up_pulse));
-special_one_pulse special_one_pulse_down(.clk(clk), .pb_in(move_down), .pb_out(move_down_pulse));
+rocker rocker1(.clk(clk), .rst(rst), .MISO(MISO), .SS(SS), .MOSI(MOSI), .SCLK(SCLK),
+.left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(), .down_click());
 
 seven_segment Seven_segment(.clk_div(clk_div[15]), .data0(choose_x), .data1(choose_y), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
 
@@ -50,13 +48,13 @@ end
 always @(*) begin
     next_choose_x = choose_x;
     next_choose_y = choose_y;
-    if (move_up_pulse && choose_y != 0)
+    if (move_up && choose_y != 0)
         next_choose_y = choose_y - 1;
-    if (move_down_pulse && choose_y != 14)
+    if (move_down && choose_y != 14)
         next_choose_y = choose_y + 1;
-    if (move_left_pulse && choose_x != 0)
+    if (move_left && choose_x != 0)
         next_choose_x = choose_x - 1;
-    if (move_right_pulse && choose_x != 19)
+    if (move_right && choose_x != 19)
         next_choose_x = choose_x + 1;  
 end
 
