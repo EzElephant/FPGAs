@@ -1,4 +1,4 @@
-module rocker (
+module rocker1 (
     input wire clk,
 	input wire clk_div,
     input wire rst,
@@ -82,7 +82,7 @@ always @(*) begin
     lr_next_counter = 0;
     case (lr_state)
         IDLE: begin
-            if (x > 700) begin
+            if (x > 750) begin
                 next_lr_state = BIG_WAIT;
                 next_right = 1;
             end
@@ -93,7 +93,7 @@ always @(*) begin
         end
         BIG_WAIT: begin
             lr_next_counter = lr_counter + 1;
-            if (x <= 700)
+            if (x <= 750)
                 next_lr_state = IDLE;
             else if (lr_counter == 50000000) begin
                 next_lr_state = BIG_CONT;
@@ -102,7 +102,7 @@ always @(*) begin
         end
         BIG_CONT: begin
 			lr_next_counter = lr_counter + 1;
-            if (x <= 700)
+            if (x <= 750)
                 next_lr_state = IDLE;
             else if (lr_counter == 20000000) begin
                 next_right = 1;
@@ -137,7 +137,7 @@ always @(*) begin
     ud_next_counter = 0;
     case (ud_state)
         IDLE: begin
-            if (y > 700) begin
+            if (y > 750) begin
                 next_ud_state = BIG_WAIT;
                 next_down = 1;
             end
@@ -148,7 +148,7 @@ always @(*) begin
         end
         BIG_WAIT: begin
             ud_next_counter = ud_counter + 1;
-            if (y <= 700)
+            if (y <= 750)
                 next_ud_state = IDLE;
             else if (ud_counter == 50000000) begin
                 next_ud_state = BIG_CONT;
@@ -157,7 +157,7 @@ always @(*) begin
         end
         BIG_CONT: begin
 			ud_next_counter = ud_counter + 1;
-            if (y <= 700)
+            if (y <= 750)
                 next_ud_state = IDLE;
             else if (ud_counter == 20000000) begin
                 next_down = 1;
@@ -178,6 +178,211 @@ always @(*) begin
             if (y >= 300)
                 next_ud_state = IDLE;
             else if (ud_counter == 20000000) begin
+                next_up = 1;
+                ud_next_counter = 0;
+            end
+        end
+    endcase
+end
+
+endmodule
+
+module rocker2 (
+    input wire clk,
+	input wire clk_div,
+    input wire rst,
+    input wire MISO,
+    output wire SS,
+    output wire MOSI,
+    output wire SCLK,
+    output reg left,
+    output reg right,
+    output reg up,
+    output reg down,
+    output reg click,
+    output reg down_click
+);
+parameter IDLE = 0;
+parameter LITTLE_SMALL = 1;
+parameter SMALL = 2;
+parameter LITTLE_BIG = 3;
+parameter BIG = 4;
+
+// Signal to send/receive data to/from PmodJSTK
+wire sndRec;
+// Data read from PmodJSTK
+wire [39:0] jstkData;
+
+reg next_left, next_right, next_up, next_down;
+reg [2:0] lr_state, next_lr_state, ud_state, next_ud_state;
+reg [9:0] x, y, pre_x, pre_y;
+reg [29:0] lr_counter, lr_next_counter, ud_counter, ud_next_counter;
+
+ClkDiv_5Hz genSndRec(.CLK(clk), .RST(rst), .CLKOUT(sndRec));
+PmodJSTK PmodJSTK_Int(
+				.CLK(clk),
+				.RST(rst),
+				.sndRec(sndRec),
+				.DIN(0), // for LED use
+				.MISO(MISO),
+				.SS(SS),
+				.SCLK(SCLK),
+				.MOSI(MOSI),
+				.DOUT(jstkData)
+                );
+
+always @(*) begin
+    click = jstkData[0];
+    down_click = jstkData[1];
+    x = {jstkData[9:8], jstkData[23:16]};
+    y = {jstkData[25:24], jstkData[39:32]};
+end
+
+
+always @(posedge clk_div) begin
+    pre_x <= x;
+    pre_y <= y;
+    if (rst) begin
+        lr_state <= IDLE;
+        ud_state <= IDLE;
+        left <= 0;
+        right <= 0;
+        up <= 0;
+        down <= 0;
+        lr_counter <= 0;
+        ud_counter <= 0;
+    end
+    else begin
+        lr_state <= next_lr_state;
+        ud_state <= next_ud_state;
+        left <= next_left;
+        right <= next_right;
+        up <= next_up;
+        down <= next_down;
+        lr_counter <= lr_next_counter;
+        ud_counter <= ud_next_counter;
+    end
+end
+
+always @(*) begin
+    next_lr_state = lr_state;
+    next_left = 0;
+    next_right = 0;
+    lr_next_counter = 0;
+    case (lr_state)
+        IDLE: begin
+            if (x > 825) begin
+                next_lr_state = BIG;
+                next_right = 1;
+            end
+			else if (x > 625) begin
+				next_lr_state = LITTLE_BIG;
+                next_right = 1;
+			end
+            else if (x < 225) begin
+                next_lr_state = SMALL;
+                next_left = 1;
+            end
+			else if (x < 425) begin
+                next_lr_state = LITTLE_SMALL;
+                next_left = 1;
+            end
+        end
+		BIG: begin
+			lr_next_counter = lr_counter + 1;
+			if (x <= 825)
+				next_lr_state = IDLE;
+			else if (lr_counter == 500000) begin
+                next_right = 1;
+                lr_next_counter = 0;
+            end
+		end
+        LITTLE_BIG: begin
+			lr_next_counter = lr_counter + 1;
+            if (x <= 625)
+                next_lr_state = IDLE;
+            else if (lr_counter == 1000000) begin
+                next_right = 1;
+                lr_next_counter = 0;
+            end
+        end
+        LITTLE_SMALL: begin
+			lr_next_counter = lr_counter + 1;
+            if (x >= 425)
+                next_lr_state = IDLE;
+            else if (lr_counter == 1000000) begin
+                next_left = 1;
+                lr_next_counter = 0;
+            end
+        end
+		SMALL: begin
+			lr_next_counter = lr_counter + 1;
+            if (x >= 225)
+                next_lr_state = IDLE;
+            else if (lr_counter == 500000) begin
+                next_left = 1;
+                lr_next_counter = 0;
+            end
+        end
+    endcase
+end
+
+always @(*) begin
+    next_ud_state = ud_state;
+    next_up = 0;
+    next_down = 0;
+    ud_next_counter = 0;
+    case (ud_state)
+        IDLE: begin
+            if (y > 825) begin
+                next_ud_state = BIG;
+                next_down = 1;
+            end
+			else if (y > 625) begin
+				next_ud_state = LITTLE_BIG;
+                next_down = 1;
+			end
+            else if (y < 225) begin
+                next_ud_state = SMALL;
+                next_up = 1;
+            end
+			else if (y < 425) begin
+                next_ud_state = LITTLE_SMALL;
+                next_up = 1;
+            end
+        end
+		BIG: begin
+			ud_next_counter = ud_counter + 1;
+			if (y <= 825)
+				next_ud_state = IDLE;
+			else if (ud_counter == 500000) begin
+                next_down = 1;
+                ud_next_counter = 0;
+            end
+		end
+        LITTLE_BIG: begin
+			ud_next_counter = ud_counter + 1;
+            if (y <= 625)
+                next_ud_state = IDLE;
+            else if (ud_counter == 1000000) begin
+                next_down = 1;
+                ud_next_counter = 0;
+            end
+        end
+        LITTLE_SMALL: begin
+			ud_next_counter = ud_counter + 1;
+            if (y >= 425)
+                next_ud_state = IDLE;
+            else if (ud_counter == 1000000) begin
+                next_up = 1;
+                ud_next_counter = 0;
+            end
+        end
+		SMALL: begin
+			ud_next_counter = ud_counter + 1;
+            if (y >= 225)
+                next_ud_state = IDLE;
+            else if (ud_counter == 500000) begin
                 next_up = 1;
                 ud_next_counter = 0;
             end
