@@ -1,5 +1,6 @@
 module rocker (
     input wire clk,
+	input wire clk_div,
     input wire rst,
     input wire MISO,
     output wire SS,
@@ -49,7 +50,7 @@ always @(*) begin
 end
 
 
-always @(posedge clk) begin
+always @(posedge clk_div) begin
     pre_x <= x;
     pre_y <= y;
     if (rst) begin
