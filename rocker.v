@@ -95,7 +95,7 @@ always @(*) begin
             lr_next_counter = lr_counter + 1;
             if (x <= 750)
                 next_lr_state = IDLE;
-            else if (lr_counter == 50000000) begin
+            else if (lr_counter == 30000000) begin
                 next_lr_state = BIG_CONT;
                 lr_next_counter = 0;
             end
@@ -104,7 +104,7 @@ always @(*) begin
 			lr_next_counter = lr_counter + 1;
             if (x <= 750)
                 next_lr_state = IDLE;
-            else if (lr_counter == 20000000) begin
+            else if (lr_counter == 10000000) begin
                 next_right = 1;
                 lr_next_counter = 0;
             end
@@ -113,7 +113,7 @@ always @(*) begin
             lr_next_counter = lr_counter + 1;
             if (x >= 300)
                 next_lr_state = IDLE;
-            else if (lr_counter == 50000000) begin
+            else if (lr_counter == 30000000) begin
                 next_lr_state = SMALL_CONT;
                 lr_next_counter = 0;
             end
@@ -122,7 +122,7 @@ always @(*) begin
 			lr_next_counter = lr_counter + 1;
             if (x >= 300)
                 next_lr_state = IDLE;
-            else if (lr_counter == 20000000) begin
+            else if (lr_counter == 10000000) begin
                 next_left = 1;
                 lr_next_counter = 0;
             end
@@ -150,7 +150,7 @@ always @(*) begin
             ud_next_counter = ud_counter + 1;
             if (y <= 750)
                 next_ud_state = IDLE;
-            else if (ud_counter == 50000000) begin
+            else if (ud_counter == 30000000) begin
                 next_ud_state = BIG_CONT;
                 ud_next_counter = 0;
             end
@@ -159,7 +159,7 @@ always @(*) begin
 			ud_next_counter = ud_counter + 1;
             if (y <= 750)
                 next_ud_state = IDLE;
-            else if (ud_counter == 20000000) begin
+            else if (ud_counter == 10000000) begin
                 next_down = 1;
                 ud_next_counter = 0;
             end
@@ -168,7 +168,7 @@ always @(*) begin
             ud_next_counter = ud_counter + 1;
             if (y >= 300)
                 next_ud_state = IDLE;
-            else if (ud_counter == 50000000) begin
+            else if (ud_counter == 30000000) begin
                 next_ud_state = SMALL_CONT;
                 ud_next_counter = 0;
             end
@@ -177,7 +177,7 @@ always @(*) begin
 			ud_next_counter = ud_counter + 1;
             if (y >= 300)
                 next_ud_state = IDLE;
-            else if (ud_counter == 20000000) begin
+            else if (ud_counter == 10000000) begin
                 next_up = 1;
                 ud_next_counter = 0;
             end
