@@ -145,187 +145,187 @@ end
 // first_layer
 always @(*) begin
     if(map_addr == knight_pos)
-        if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-            if(h_cnt[4:0] < (31 * knight_blood / 127))
+        if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && knight_blood > 0)  // 2 pixel for blood
+            if(h_cnt[4:0] < (32 * knight_blood / 127))
                 first_layer_pixel = 12'hC00;
             else
                 first_layer_pixel = 12'hFFF;
         else if(knight_pixel != 12'h000 && knight_state == hit && animation_count > 8)
             first_layer_pixel = knight_pixel + 12'h200;
-        else if(knight_pixel != 12'h000)
+        else if(knight_pixel != 12'h000 && knight_blood > 0)
             first_layer_pixel = knight_pixel;
         else
             first_layer_pixel = pixel;
     else if(map_addr == wizard_pos)
-        if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-            if(h_cnt[4:0] < (31 * wizard_blood / 80))
+        if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && wizard_blood > 0)  // 2 pixel for blood
+            if(h_cnt[4:0] < (32 * wizard_blood / 80))
                 first_layer_pixel = 12'hC00;
             else
                 first_layer_pixel = 12'hFFF;
         else if(wizard_pixel != 12'h000 && wizard_state == hit && animation_count > 8)
             first_layer_pixel = wizard_pixel + 12'h200;
-        else if(wizard_pixel != 12'h000)
+        else if(wizard_pixel != 12'h000 && wizard_blood > 0)
             first_layer_pixel = wizard_pixel;
         else
             first_layer_pixel = pixel;
     else
         if(map_addr == skeleton_pos[0])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * skeleton_blood_1 / 40))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && skeleton_blood_1 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * skeleton_blood_1 / 40))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(skeleton_pixel != 12'h000)
+            else if(skeleton_pixel != 12'h000 && skeleton_blood_1 > 0)
                 first_layer_pixel = skeleton_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == eye_pos[0])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * eye_blood_1 / 25))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && eye_blood_1 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * eye_blood_1 / 25))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(eye_pixel != 12'h000)
+            else if(eye_pixel != 12'h000 && eye_blood_1 > 0)
                 first_layer_pixel = eye_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == goblin_pos[0])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * goblin_blood_1 / 16))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && goblin_blood_1 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * goblin_blood_1 / 16))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(goblin_pixel != 12'h000)
+            else if(goblin_pixel != 12'h000 && goblin_blood_1 > 0)
                 first_layer_pixel = goblin_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == mushroom_pos[0])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * mushroom_blood_1 / 60))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && mushroom_blood_1 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * mushroom_blood_1 / 60))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(mushroom_pixel != 12'h000)
+            else if(mushroom_pixel != 12'h000 && mushroom_blood_1 > 0)
                 first_layer_pixel = mushroom_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == skeleton_pos[1])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * skeleton_blood_2 / 40))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && skeleton_blood_2 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * skeleton_blood_2 / 40))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(skeleton_pixel != 12'h000)
+            else if(skeleton_pixel != 12'h000 && skeleton_blood_2 > 0)
                 first_layer_pixel = skeleton_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == eye_pos[1])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * eye_blood_2 / 25))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && eye_blood_2 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * eye_blood_2 / 25))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(eye_pixel != 12'h000)
+            else if(eye_pixel != 12'h000 && eye_blood_2 > 0)
                 first_layer_pixel = eye_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == goblin_pos[1])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * goblin_blood_2 / 16))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && goblin_blood_2 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * goblin_blood_2 / 16))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(goblin_pixel != 12'h000)
+            else if(goblin_pixel != 12'h000 && goblin_blood_2 > 0)
                 first_layer_pixel = goblin_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == mushroom_pos[1])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * mushroom_blood_2 / 40))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && mushroom_blood_2 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * mushroom_blood_2 / 40))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(mushroom_pixel != 12'h000)
+            else if(mushroom_pixel != 12'h000 && mushroom_blood_2 > 0)
                 first_layer_pixel = mushroom_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == skeleton_pos[2])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * skeleton_blood_3 / 40))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && skeleton_blood_3 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * skeleton_blood_3 / 40))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(skeleton_pixel != 12'h000)
+            else if(skeleton_pixel != 12'h000 && skeleton_blood_3 > 0)
                 first_layer_pixel = skeleton_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == eye_pos[2])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * eye_blood_3 / 25))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && eye_blood_3 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * eye_blood_3 / 25))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(eye_pixel != 12'h000)
+            else if(eye_pixel != 12'h000 && eye_blood_3 > 0)
                 first_layer_pixel = eye_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == goblin_pos[2])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * goblin_blood_3 / 16))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && goblin_blood_3 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * goblin_blood_3 / 16))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(goblin_pixel != 12'h000)
+            else if(goblin_pixel != 12'h000 && goblin_blood_3 > 0)
                 first_layer_pixel = goblin_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == mushroom_pos[2])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * mushroom_blood_3 / 60))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && mushroom_blood_3 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * mushroom_blood_3 / 60))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(mushroom_pixel != 12'h000)
+            else if(mushroom_pixel != 12'h000 && mushroom_blood_3 > 0)
                 first_layer_pixel = mushroom_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == skeleton_pos[3])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * skeleton_blood_4 / 40))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && skeleton_blood_4 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * skeleton_blood_4 / 40))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(skeleton_pixel != 12'h000)
+            else if(skeleton_pixel != 12'h000 && skeleton_blood_4 > 0)
                 first_layer_pixel = skeleton_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == eye_pos[3])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * eye_blood_4 / 25))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && eye_blood_4 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * eye_blood_4 / 25))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(eye_pixel != 12'h000)
+            else if(eye_pixel != 12'h000 && eye_blood_4 > 0)
                 first_layer_pixel = eye_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == goblin_pos[3])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * goblin_blood_4 / 16))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && goblin_blood_4 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * goblin_blood_4 / 16))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(goblin_pixel != 12'h000)
+            else if(goblin_pixel != 12'h000 && goblin_blood_4 > 0)
                 first_layer_pixel = goblin_pixel;
             else
                 first_layer_pixel = pixel;
         else if(map_addr == mushroom_pos[3])
-            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4)  // 2 pixel for blood
-                if(h_cnt[4:0] < (31 * mushroom_blood_4 / 60))
+            if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && mushroom_blood_4 > 0)  // 2 pixel for blood
+                if(h_cnt[4:0] < (32 * mushroom_blood_4 / 60))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
-            else if(mushroom_pixel != 12'h000)
+            else if(mushroom_pixel != 12'h000 && mushroom_blood_4 > 0)
                 first_layer_pixel = mushroom_pixel;
             else
                 first_layer_pixel = pixel;
@@ -456,7 +456,7 @@ end
 
 always @(*) begin
     case(monster_state)
-        attack:
+        1:
                 if(animation_count < 4)
                     next_monster_anim = 2;
                 else if(animation_count < 8)
