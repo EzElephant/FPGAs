@@ -1,26 +1,3 @@
-`define lc 32'd131
-`define ld 32'd147
-`define le 32'd165
-`define lf 32'd174
-`define lg 32'd196
-`define la 32'd220
-`define lb 32'd247
-`define c  32'd262
-`define d  32'd294
-`define e  32'd330
-`define f  32'd349
-`define g  32'd392
-`define a  32'd440
-`define b  32'd494
-`define hc 32'd524
-`define hd 32'd588
-`define he 32'd660
-`define hf 32'd698
-`define hg 32'd784
-`define ha 32'd880
-`define hb 32'd988
-`define si 32'd50000000
-
 module music(
     input clk,
     input clk_25MHz,
@@ -39,15 +16,18 @@ parameter BGM = 0;
 parameter EFFECT = 1;
 
 wire mute;
+wire [4:0] bgm_freq_numL, bgm_freq_numR, effect_freq_num;
 wire [15:0] audio_in_left, audio_in_right;
 
 reg [31:0] freqL, freqR;
 reg [21:0] freq_outL, freq_outR;
 reg [12:0] bgm_counter, next_bgm_counter, effect_counter, next_effect_counter;
+reg [4:0] freq_numL, freq_numR;
 reg [2:0] vol, next_vol, music_state, next_music_state;
 
-blk_mem_gen_msuic0 bgm(.clka(clk_25MHz), .addra(bgm_counter), .douta(bgm_freq));
-blk_mem_gen_msuic0 effect(.clka(clk_25MHz), .addra(effect_counter), .douta(effect_freq));
+blk_mem_gen_msuic0 bgm_l(.clka(clk_25MHz), .addra(bgm_counter), .douta(bgm_freq_numL));
+blk_mem_gen_msuic1 bgm_r(.clka(clk_25MHz), .addra(bgm_counter), .douta(bgm_freq_numR));
+// blk_mem_gen_msuic2 effect(.clka(clk_25MHz), .addra(effect_counter), .douta(effect_freq_num));
 
 always @(posedge clk) begin
     if (rst) begin
@@ -75,20 +55,95 @@ always @(*) begin
         BGM: begin
             if (effect_control == 1)
                 next_music_state = EFFECT;
-            freqL =  bgm_freq;
-            freqR = bgm_freq;
+            freq_numL = bgm_freq_numL;
+            freq_numR = bgm_freq_numR;
         end
         EFFECT: begin
             if (effect_counter == 9487)
                 next_music_state = BGM;
-            freqL =  effect_freq;
-            freqR = effect_freq;
+            freq_numL = effect_freq_num;
+            freq_numR = effect_freq_num;
         end
     endcase
 end
 
 always @(*) begin
-    if (bgm_counter == 9487)
+    case (music_state)
+        BGM: begin
+            case (freq_numL)
+                0:  freqL = 50000000;
+                1:  freqL = 831;
+                2:  freqL = 1661;
+                3:  freqL = 831;
+                4:  freqL = 415;
+                5:  freqL = 196;
+                6:  freqL = 220;
+                7:  freqL = 247;
+                8:  freqL = 262;
+                9:  freqL = 294;
+                10: freqL = 330;
+                11: freqL = 349;
+                12: freqL = 392;
+                13: freqL = 440;
+                14: freqL = 494;
+                15: freqL = 523;
+                16: freqL = 587;
+                17: freqL = 659;
+                18: freqL = 698;
+                19: freqL = 784;
+                20: freqL = 880;
+                21: freqL = 988;
+                22: freqL = 1046;
+                23: freqL = 1148;
+                24: freqL = 1319;
+                25: freqL = 1397;
+                26: freqL = 1568;
+                27: freqL = 1760;
+                28: freqL = 1976;
+                default: freqL = 50000000;
+            endcase
+            case (freq_numR)
+                0:  freqR = 50000000;
+                1:  freqR = 831;
+                2:  freqR = 1661;
+                3:  freqR = 831;
+                4:  freqR = 415;
+                5:  freqR = 196;
+                6:  freqR = 220;
+                7:  freqR = 247;
+                8:  freqR = 262;
+                9:  freqR = 294;
+                10: freqR = 330;
+                11: freqR = 349;
+                12: freqR = 392;
+                13: freqR = 440;
+                14: freqR = 494;
+                15: freqR = 523;
+                16: freqR = 587;
+                17: freqR = 659;
+                18: freqR = 698;
+                19: freqR = 784;
+                20: freqR = 880;
+                21: freqR = 988;
+                22: freqR = 1046;
+                23: freqR = 1148;
+                24: freqR = 1319;
+                25: freqR = 1397;
+                26: freqR = 1568;
+                27: freqR = 1760;
+                28: freqR = 1976;
+                default: freqR = 50000000;
+            endcase
+        end
+        EFFECT: begin
+            freqL = 50000000;
+            freqR = 50000000;
+        end
+    endcase
+end
+
+always @(*) begin
+    if (bgm_counter == 1199)
         next_bgm_counter = 0;
     else
         next_bgm_counter = bgm_counter + 1;
@@ -101,7 +156,7 @@ end
 
 always @(posedge clk) begin
     if (rst) begin
-        vol <= 1;
+        vol <= 2;
     end
     else begin
         vol <= next_vol;
@@ -109,6 +164,7 @@ always @(posedge clk) begin
 end
 
 always @(*) begin
+    next_vol = vol;
     if (_volUP && vol != 5)
         next_vol = vol + 1;
     if (_volDOWN && vol != 0)
@@ -126,7 +182,7 @@ note_gen noteGen_00(
     .clk(clk), 
     .rst(rst), 
     .volume(vol),
-    .mute(_mute),
+    .mute(mute),
     .note_div_left(freq_outL), 
     .note_div_right(freq_outR), 
     .audio_left(audio_in_left),
