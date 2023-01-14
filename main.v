@@ -1,22 +1,28 @@
 module FPGAs(
-    input clk,
-    input rst,
-    input MISO_1,
-    input MISO_2,
-    output SS_1,
-    output SS_2,
-    output MOSI_1,
-    output MOSI_2,
-    output SCLK_1,
-    output SCLK_2,
-    output [3:0] vgaRed,
-    output [3:0] vgaGreen,
-    output [3:0] vgaBlue,
-    output hsync,
-    output vsync,
-    output [7:0] LED,
-    output [6:0] DISPLAY,
-    output [3:0] DIGIT
+    input clk, // 100MHz clock
+    input rst, // BTNC
+    input btn_up, // for music volume control
+    input btn_down, // for music volume control
+    input MISO_1, // for rocker
+    input MISO_2, // for rocker
+    output SS_1, // for rocker
+    output SS_2, // for rocker
+    output MOSI_1, // for rocker
+    output MOSI_2, // for rocker
+    output SCLK_1, // for rocker
+    output SCLK_2, // for rocker
+    output [3:0] vgaRed, // for vga
+    output [3:0] vgaGreen, // for vga
+    output [3:0] vgaBlue, // for vga
+    output hsync, // for vga
+    output vsync, // for vga
+    output [7:0] LED, // for LED display
+    output [6:0] DISPLAY, // for vga
+    output [3:0] DIGIT, // for vga
+    output audio_mclk, // for music
+    output audio_lrck, // for music
+    output audio_sck, // for music
+    output audio_sdin // for music
 );
 
 parameter move = 2'b00;
@@ -25,8 +31,8 @@ parameter hit = 2'b10;
 parameter idle = 2'b11;
 
 wire click, down_click;
-wire click_d, down_click_d;
-wire click_pulse, down_click_pulse;
+wire click_d, down_click_d, btn_up_d, btn_down_d;
+wire click_pulse, down_click_pulse, btn_up_pulse, btn_down_pulse;
 wire move_left, move_right, move_up, move_down;
 wire scroll_left, scroll_right, scroll_up, scroll_down;
 wire [26:0] clk_div;
@@ -117,6 +123,12 @@ one_pulse cen_push_pulse(.clk(clk_div[1]), .pb_in(click_d), .pb_out(click_pulse)
 debounce down_push(.clk(clk_div[1]), .pb(down_click), .pb_debounced(down_click_d));
 one_pulse down_push_pulse(.clk(clk_div[1]), .pb_in(down_click_d), .pb_out(down_click_pulse));
 
+debounce btn_up_debounce(.clk(clk), .pb(btn_up), .pb_debounced(btn_up_d));
+one_pulse btn_up_1pulse(.clk(clk), .pb_in(btn_up_d), .pb_out(btn_up_pulse));
+
+debounce btn_down_debounce(.clk(clk), .pb(btn_down), .pb_debounced(btn_down_d));
+one_pulse btn_down_1pulse(.clk(clk), .pb_in(btn_down_d), .pb_out(btn_down_pulse));
+
 rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .SCLK(SCLK_1),
 .left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(click), .down_click(down_click));
 
@@ -124,6 +136,10 @@ rocker2 rocker2(.clk(clk), .rst(rst), .MISO(MISO_2), .SS(SS_2), .MOSI(MOSI_2), .
 .left(scroll_right), .right(scroll_left), .up(scroll_down), .down(scroll_up), .click(), .down_click());
 
 seven_segment Seven_segment(.clk_div(clk_div[15]), .data0(choose_x), .data1(choose_y), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
+
+music music(.clk(clk), .clk_25MHz(clk_div[1]), .clk_div(clk_div[21]), .rst(rst), 
+.effect_control(), ._volUP(btn_up_pulse), ._volDOWN(btn_down_pulse),
+.audio_mclk(audio_mclk), .audio_lrck(audio_lrck), .audio_sck(audio_sck), .audio_sdin(audio_sdin));
 
 // map file for selection, if changes this, remember to change blk_mem_gen_1 too.
 blk_mem_gen_8 map_info(.clka(clk_div[1]), .addra(selected_pos), .douta(floor_num));
