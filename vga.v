@@ -12,10 +12,10 @@ module vga(
     input [1:0] knight_state,
     input [1:0] wizard_state,
     input monster_state,
-    input [8:0] scroll_x,
-    input [8:0] scroll_y,
+    input [10:0] scroll_x,
+    input [10:0] scroll_y,
     input [8:0] action_pos,
-    input [8:0] selected_pos,
+    input [10:0] selected_pos,
     input [8:0] knight_pos,
     input [8:0] wizard_pos,
     input [6:0] knight_blood,
@@ -42,7 +42,7 @@ module vga(
 );
 
 wire valid;
-wire [9:0] ori_h_cnt, ori_v_cnt;
+wire [10:0] ori_h_cnt, ori_v_cnt;
 wire [11:0] pixel;
 wire [11:0] knight_pixel;
 wire [11:0] wizard_pixel;
@@ -61,8 +61,8 @@ reg [12:0] monster_addr;
 reg [14:0] title_addr;
 reg [14:0] lost_scene_addr;
 reg [14:0] win_scene_addr;
-reg [9:0] h_cnt, v_cnt;
-reg [8:0] map_addr;
+reg [10:0] h_cnt, v_cnt;
+reg [10:0] map_addr;
 reg [3:0] write_texture_num;
 wire [3:0] texture_num;
 
@@ -133,16 +133,16 @@ end
 
 // caculate scroll window h_cnt v_cnt
 always @(*) begin
-    // h_cnt = ori_h_cnt + scroll_x;
-    // v_cnt = ori_v_cnt + scroll_y;
-    h_cnt = ori_h_cnt;
-    v_cnt = ori_v_cnt;
+    h_cnt = ori_h_cnt + scroll_x;
+    v_cnt = ori_v_cnt + scroll_y;
+    // h_cnt = ori_h_cnt;
+    // v_cnt = ori_v_cnt;
 end
 
 
 // map_addr
 always @(*) begin
-    map_addr = (h_cnt >> 5) + 20 * (v_cnt >> 5);
+    map_addr = (h_cnt >> 5) + 40 * (v_cnt >> 5);
 end
 
 // knight addr
@@ -402,7 +402,7 @@ always @(*) begin
                 else if(action_pos == knight_pos)   // select range for knight
                     case(player_state)
                         move:  // move
-                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 20 || map_addr == action_pos + 20) && texture_num < 3)   // 4-direction
+                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 40 || map_addr == action_pos + 40) && texture_num < 3)   // 4-direction
                                 if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
                                     final_pixel = 12'h4Af;
                                 else
@@ -410,7 +410,7 @@ always @(*) begin
                             else
                                 final_pixel = first_layer_pixel;
                         attack:  // attack
-                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 20 || map_addr == action_pos + 20) && texture_num < 3)   // 4-direction
+                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 40 || map_addr == action_pos + 40) && texture_num < 3)   // 4-direction
                                 if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
                                     final_pixel = 12'hF22;
                                 else
@@ -423,7 +423,7 @@ always @(*) begin
                 else    // select range for wizard
                     case(player_state)
                         move:  // move
-                            if((map_addr / 20 == action_pos / 20 || map_addr % 20 == action_pos % 20) && texture_num < 3)   // 大十字
+                            if((map_addr / 40 == action_pos / 40 || map_addr % 40 == action_pos % 40) && texture_num < 3)   // 大十字
                                 if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
                                     final_pixel = 12'h4Af;
                                 else
@@ -431,7 +431,7 @@ always @(*) begin
                             else
                                 final_pixel = first_layer_pixel;
                         attack:  // attack
-                            if((map_addr / 20 == action_pos / 20 || map_addr % 20 == action_pos % 20) && texture_num < 3)   
+                            if((map_addr / 40 == action_pos / 40 || map_addr % 40 == action_pos % 40) && texture_num < 3)   
                                 if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
                                     final_pixel = 12'hF22;
                                 else

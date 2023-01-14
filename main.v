@@ -47,9 +47,9 @@ wire [7:0] rand_test;
 reg game_rst; // for another round
 reg [2:0] i, j, k;
 reg [3:0] game_state, next_game_state;
-reg [4:0] choose_x, choose_y, next_choose_x, next_choose_y;
+reg [5:0] choose_x, choose_y, next_choose_x, next_choose_y;
 reg [8:0] write_count, next_write_count;
-reg [8:0] scroll_x, scroll_y, next_scroll_x, next_scroll_y;
+reg [10:0] scroll_x, scroll_y, next_scroll_x, next_scroll_y;
 wire [3:0] floor_num;
 
 // animation counter
@@ -57,9 +57,9 @@ reg [19:0] offset_count;
 reg [3:0] animation_count;
 
 // record which block has character
-// in 20 * 15 map, 0 for h_cnt, 1 for v_cnt
+// in 40 * 30 map, 0 for h_cnt, 1 for v_cnt
 reg [8:0] action_pos, next_action_pos;
-wire [8:0] selected_pos;
+wire [10:0] selected_pos;
 reg [8:0] knight_pos = 125, next_knight_pos; 
 reg [8:0] wizard_pos = 164, next_wizard_pos;
 reg [8:0] skeleton_pos [0:3];
@@ -161,7 +161,7 @@ music music(.clk(clk), .clk_25MHz(clk_div[1]), .clk_div(clk_div[21]), .rst(rst),
 blk_mem_gen_8 map_info(.clka(clk_div[1]), .addra(selected_pos), .douta(floor_num));
 
 // choose_x, choose_y to 1D
-assign selected_pos = ({4'b0000, choose_y} * 20) + {4'b0000, choose_x};
+assign selected_pos = ({3'b000, choose_y} * 40) + {3'b000, choose_x};
 
 // write initial mob position... with a terrible way
 initial begin
@@ -223,11 +223,11 @@ always @(*) begin
     if (game_state == GAME) begin
         if (move_up && choose_y != 0)
             next_choose_y = choose_y - 1;
-        if (move_down && choose_y != 14)
+        if (move_down && choose_y != 29)
             next_choose_y = choose_y + 1;
         if (move_left && choose_x != 0)
             next_choose_x = choose_x - 1;
-        if (move_right && choose_x != 19)
+        if (move_right && choose_x != 39)
             next_choose_x = choose_x + 1;
     end
 end
@@ -368,7 +368,7 @@ always @(*) begin
         next_knight_state = hit;
     else if(knight_state == idle)
         // on the 4 direction of knight and in attack state
-        if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 20 || selected_pos == action_pos + 20) 
+        if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) 
             && action_pos == knight_pos && down_click_pulse && player_state == attack)
             // make sure player select on mobs
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0])
@@ -407,7 +407,7 @@ always @(*) begin
     case(wizard_state)
         idle:
             // on the crossline of wizard
-            if((selected_pos / 20 == action_pos / 20 || selected_pos % 20 == action_pos % 20) && action_pos == wizard_pos && down_click_pulse && player_state == attack)
+            if((selected_pos / 40 == action_pos / 40 || selected_pos % 40 == action_pos % 40) && action_pos == wizard_pos && down_click_pulse && player_state == attack)
                 // make sure player select on mobs
                 if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0])
                     next_wizard_state = attack;
@@ -420,7 +420,7 @@ always @(*) begin
                 else
                     next_wizard_state = idle;
             // wizard finish the step to move -> monster turn to attack
-            else if((selected_pos / 20 == action_pos / 20 || selected_pos % 20 == action_pos % 20) && floor_num < 3 && action_pos == wizard_pos && down_click_pulse && player_state == move)
+            else if((selected_pos / 40 == action_pos / 40 || selected_pos % 40 == action_pos % 40) && floor_num < 3 && action_pos == wizard_pos && down_click_pulse && player_state == move)
                 // make sure player didn't select on mobs or characters
                 if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == knight_pos || selected_pos == wizard_pos)
                     next_wizard_state = idle;
@@ -481,7 +481,7 @@ end
 always @(*) begin
     if(knight_blood == 0)
         next_knight_energy = 0;
-    else if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 20 || selected_pos == action_pos + 20) && floor_num < 3 && down_click_pulse && player_state == move)
+    else if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 3 && down_click_pulse && player_state == move)
         // make sure player didn't select on mobs or characters 
         if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == wizard_pos || selected_pos == knight_pos)
             next_knight_energy = knight_energy;
@@ -516,7 +516,7 @@ always @(*) begin
         if(knight_blood == 0)   // knight dead
             next_action_pos = wizard_pos;
         // in the 4-direction of knight
-        else if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 20 || selected_pos == action_pos + 20) && floor_num < 3 && down_click_pulse && player_state == move)
+        else if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 3 && down_click_pulse && player_state == move)
             // make sure player didn't select on mobs or characters 
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == wizard_pos || selected_pos == knight_pos)
                 next_action_pos = knight_pos;
@@ -542,7 +542,7 @@ always @(*) begin
         if(wizard_blood == 0)   // wizard dead
             next_action_pos = 0;
         // on the crossline of wizard
-        else if((selected_pos / 20 == action_pos / 20 || selected_pos % 20 == action_pos % 20) && floor_num < 3 && down_click_pulse && player_state == move)
+        else if((selected_pos / 40 == action_pos / 40 || selected_pos % 40 == action_pos % 40) && floor_num < 3 && down_click_pulse && player_state == move)
             // make sure player didn't select on mobs or characters
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == wizard_pos || selected_pos == knight_pos)
                 next_action_pos = wizard_pos;
@@ -577,10 +577,10 @@ end
 
 always @(*) begin
     if(knight_blood == 0)
-        next_knight_pos = 20;
+        next_knight_pos = 40;
     else if(action_pos == knight_pos)
         // on the 4-direction of knight
-        if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 20 || selected_pos == action_pos + 20) && floor_num < 3 && down_click_pulse && player_state == move)
+        if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 3 && down_click_pulse && player_state == move)
             // make sure player didn't select on mobs or characters
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == wizard_pos)
                 next_knight_pos = knight_pos;
@@ -609,10 +609,10 @@ end
 
 always @(*) begin
     if(wizard_blood == 0)
-        next_wizard_pos = 20;
+        next_wizard_pos = 40;
     else if(action_pos == wizard_pos)
         // on the crossline of wizard
-        if((selected_pos / 20 == action_pos / 20 || selected_pos % 20 == action_pos % 20) && floor_num < 3 && down_click_pulse && player_state == move)
+        if((selected_pos / 40 == action_pos / 40 || selected_pos % 40 == action_pos % 40) && floor_num < 3 && down_click_pulse && player_state == move)
             // make sure player didn't select on mobs or characters
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == knight_pos)
                 next_wizard_pos = wizard_pos;
@@ -712,49 +712,49 @@ end
 always @(*) begin
     // skeleton's turn to attack
     if(monster_state == 1 && animation_count == 7)
-        if((knight_pos == skeleton_pos[0] - 1 || knight_pos == skeleton_pos[0] + 1 || knight_pos == skeleton_pos[0] - 20 || knight_pos == skeleton_pos[0] + 20) && skeleton_blood[0] > 0)
+        if((knight_pos == skeleton_pos[0] - 1 || knight_pos == skeleton_pos[0] + 1 || knight_pos == skeleton_pos[0] - 40 || knight_pos == skeleton_pos[0] + 40) && skeleton_blood[0] > 0)
             next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == skeleton_pos[1] - 1 || knight_pos == skeleton_pos[1] + 1 || knight_pos == skeleton_pos[1] - 20 || knight_pos == skeleton_pos[1] + 20) && skeleton_blood[1] > 0)
+        else if((knight_pos == skeleton_pos[1] - 1 || knight_pos == skeleton_pos[1] + 1 || knight_pos == skeleton_pos[1] - 40 || knight_pos == skeleton_pos[1] + 40) && skeleton_blood[1] > 0)
             next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == skeleton_pos[2] - 1 || knight_pos == skeleton_pos[2] + 1 || knight_pos == skeleton_pos[2] - 20 || knight_pos == skeleton_pos[2] + 20) && skeleton_blood[2] > 0)
+        else if((knight_pos == skeleton_pos[2] - 1 || knight_pos == skeleton_pos[2] + 1 || knight_pos == skeleton_pos[2] - 40 || knight_pos == skeleton_pos[2] + 40) && skeleton_blood[2] > 0)
             next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == skeleton_pos[3] - 1 || knight_pos == skeleton_pos[3] + 1 || knight_pos == skeleton_pos[3] - 20 || knight_pos == skeleton_pos[3] + 20) && skeleton_blood[3] > 0)
+        else if((knight_pos == skeleton_pos[3] - 1 || knight_pos == skeleton_pos[3] + 1 || knight_pos == skeleton_pos[3] - 40 || knight_pos == skeleton_pos[3] + 40) && skeleton_blood[3] > 0)
             next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
         else
             next_knight_blood = knight_blood;
     // eyes' turn to attack
     else if(monster_state == 1 && animation_count == 8)
-        if((knight_pos / 20 == eye_pos[0] / 20 || (knight_pos % 20) == (eye_pos[0] % 20)) && eye_blood[0] > 0)
+        if((knight_pos / 40 == eye_pos[0] / 40 || (knight_pos % 40) == (eye_pos[0] % 40)) && eye_blood[0] > 0)
             next_knight_blood = knight_blood > (16 * rand_test[7:6] / 4) ? (knight_blood - 16 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos / 20 == eye_pos[1] / 20 || (knight_pos % 20) == (eye_pos[1] % 20)) && eye_blood[1] > 0)
+        else if((knight_pos / 40 == eye_pos[1] / 40 || (knight_pos % 40) == (eye_pos[1] % 40)) && eye_blood[1] > 0)
             next_knight_blood = knight_blood > (16 * rand_test[7:6] / 4) ? (knight_blood - 16 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos / 20 == eye_pos[2] / 20 || (knight_pos % 20) == (eye_pos[2] % 20)) && eye_blood[2] > 0)
+        else if((knight_pos / 40 == eye_pos[2] / 40 || (knight_pos % 40) == (eye_pos[2] % 40)) && eye_blood[2] > 0)
             next_knight_blood = knight_blood > (16 * rand_test[7:6] / 4) ? (knight_blood - 16 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos / 20 == eye_pos[3] / 20 || (knight_pos % 20) == (eye_pos[3] % 20)) && eye_blood[3] > 0)
+        else if((knight_pos / 40 == eye_pos[3] / 40 || (knight_pos % 40) == (eye_pos[3] % 40)) && eye_blood[3] > 0)
             next_knight_blood = knight_blood > (16 * rand_test[7:6] / 4) ? (knight_blood - 16 * rand_test[7:6] / 4) : 0;
         else
             next_knight_blood = knight_blood;
     // goblin's turn to attack
     else if(monster_state == 1 && animation_count == 9)
-        if((knight_pos == goblin_pos[0] - 1 || knight_pos == goblin_pos[0] + 1 || knight_pos == goblin_pos[0] - 20 || knight_pos == goblin_pos[0] + 20) && goblin_blood[0] > 0)
+        if((knight_pos == goblin_pos[0] - 1 || knight_pos == goblin_pos[0] + 1 || knight_pos == goblin_pos[0] - 40 || knight_pos == goblin_pos[0] + 40) && goblin_blood[0] > 0)
             next_knight_blood = knight_blood > (30 * rand_test[7:6] / 4) ? (knight_blood - 30 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == goblin_pos[1] - 1 || knight_pos == goblin_pos[1] + 1 || knight_pos == goblin_pos[1] - 20 || knight_pos == goblin_pos[1] + 20) && goblin_blood[1] > 0)
+        else if((knight_pos == goblin_pos[1] - 1 || knight_pos == goblin_pos[1] + 1 || knight_pos == goblin_pos[1] - 40 || knight_pos == goblin_pos[1] + 40) && goblin_blood[1] > 0)
             next_knight_blood = knight_blood > (30 * rand_test[7:6] / 4) ? (knight_blood - 30 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == goblin_pos[2] - 1 || knight_pos == goblin_pos[2] + 1 || knight_pos == goblin_pos[2] - 20 || knight_pos == goblin_pos[2] + 20) && goblin_blood[2] > 0)
+        else if((knight_pos == goblin_pos[2] - 1 || knight_pos == goblin_pos[2] + 1 || knight_pos == goblin_pos[2] - 40 || knight_pos == goblin_pos[2] + 40) && goblin_blood[2] > 0)
             next_knight_blood = knight_blood > (30 * rand_test[7:6] / 4) ? (knight_blood - 30 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == goblin_pos[3] - 1 || knight_pos == goblin_pos[3] + 1 || knight_pos == goblin_pos[3] - 20 || knight_pos == goblin_pos[3] + 20) && goblin_blood[3] > 0)
+        else if((knight_pos == goblin_pos[3] - 1 || knight_pos == goblin_pos[3] + 1 || knight_pos == goblin_pos[3] - 40 || knight_pos == goblin_pos[3] + 40) && goblin_blood[3] > 0)
             next_knight_blood = knight_blood > (30 * rand_test[7:6] / 4) ? (knight_blood - 30 * rand_test[7:6] / 4) : 0;
         else
             next_knight_blood = knight_blood;
     // mushrooms' turn to attack
     else if(monster_state == 1 && animation_count == 10)
-        if((knight_pos == mushroom_pos[0] - 1 || knight_pos == mushroom_pos[0] + 1 || knight_pos == mushroom_pos[0] - 20 || knight_pos == mushroom_pos[0] + 20) && mushroom_blood[0] > 0)
+        if((knight_pos == mushroom_pos[0] - 1 || knight_pos == mushroom_pos[0] + 1 || knight_pos == mushroom_pos[0] - 40 || knight_pos == mushroom_pos[0] + 40) && mushroom_blood[0] > 0)
             next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == mushroom_pos[1] - 1 || knight_pos == mushroom_pos[1] + 1 || knight_pos == mushroom_pos[1] - 20 || knight_pos == mushroom_pos[1] + 20) && mushroom_blood[1] > 0)
+        else if((knight_pos == mushroom_pos[1] - 1 || knight_pos == mushroom_pos[1] + 1 || knight_pos == mushroom_pos[1] - 40 || knight_pos == mushroom_pos[1] + 40) && mushroom_blood[1] > 0)
             next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == mushroom_pos[2] - 1 || knight_pos == mushroom_pos[2] + 1 || knight_pos == mushroom_pos[2] - 20 || knight_pos == mushroom_pos[2] + 20) && mushroom_blood[2] > 0)
+        else if((knight_pos == mushroom_pos[2] - 1 || knight_pos == mushroom_pos[2] + 1 || knight_pos == mushroom_pos[2] - 40 || knight_pos == mushroom_pos[2] + 40) && mushroom_blood[2] > 0)
             next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((knight_pos == mushroom_pos[3] - 1 || knight_pos == mushroom_pos[3] + 1 || knight_pos == mushroom_pos[3] - 20 || knight_pos == mushroom_pos[3] + 20) && mushroom_blood[3] > 0)
+        else if((knight_pos == mushroom_pos[3] - 1 || knight_pos == mushroom_pos[3] + 1 || knight_pos == mushroom_pos[3] - 40 || knight_pos == mushroom_pos[3] + 40) && mushroom_blood[3] > 0)
             next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
         else
             next_knight_blood = knight_blood;
@@ -773,49 +773,49 @@ end
 always @(*) begin
     // skeleton's turn to attack
     if(monster_state == 1 && animation_count == 7)
-        if((wizard_pos == skeleton_pos[0] - 1 || wizard_pos == skeleton_pos[0] + 1 || wizard_pos == skeleton_pos[0] - 20 || wizard_pos == skeleton_pos[0] + 20) && skeleton_blood[0] > 0)
+        if((wizard_pos == skeleton_pos[0] - 1 || wizard_pos == skeleton_pos[0] + 1 || wizard_pos == skeleton_pos[0] - 40 || wizard_pos == skeleton_pos[0] + 40) && skeleton_blood[0] > 0)
             next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == skeleton_pos[1] - 1 || wizard_pos == skeleton_pos[1] + 1 || wizard_pos == skeleton_pos[1] - 20 || wizard_pos == skeleton_pos[1] + 20) && skeleton_blood[1] > 0)
+        else if((wizard_pos == skeleton_pos[1] - 1 || wizard_pos == skeleton_pos[1] + 1 || wizard_pos == skeleton_pos[1] - 40 || wizard_pos == skeleton_pos[1] + 40) && skeleton_blood[1] > 0)
             next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == skeleton_pos[2] - 1 || wizard_pos == skeleton_pos[2] + 1 || wizard_pos == skeleton_pos[2] - 20 || wizard_pos == skeleton_pos[2] + 20) && skeleton_blood[2] > 0)
+        else if((wizard_pos == skeleton_pos[2] - 1 || wizard_pos == skeleton_pos[2] + 1 || wizard_pos == skeleton_pos[2] - 40 || wizard_pos == skeleton_pos[2] + 40) && skeleton_blood[2] > 0)
             next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == skeleton_pos[3] - 1 || wizard_pos == skeleton_pos[3] + 1 || wizard_pos == skeleton_pos[3] - 20 || wizard_pos == skeleton_pos[3] + 20) && skeleton_blood[3] > 0)
+        else if((wizard_pos == skeleton_pos[3] - 1 || wizard_pos == skeleton_pos[3] + 1 || wizard_pos == skeleton_pos[3] - 40 || wizard_pos == skeleton_pos[3] + 40) && skeleton_blood[3] > 0)
             next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
         else
             next_wizard_blood = wizard_blood;
     // eyes' turn to attack
     else if(monster_state == 1 && animation_count == 8)
-        if((wizard_pos / 20 == eye_pos[0] / 20 || (wizard_pos % 20) == (eye_pos[0] % 20)) && eye_blood[0] > 0)
+        if((wizard_pos / 40 == eye_pos[0] / 40 || (wizard_pos % 40) == (eye_pos[0] % 40)) && eye_blood[0] > 0)
             next_wizard_blood = wizard_blood > (16 * rand_test[7:6] / 4) ? (wizard_blood - 16 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos / 20 == eye_pos[1] / 20 || (wizard_pos % 20) == (eye_pos[1] % 20)) && eye_blood[1] > 0)
+        else if((wizard_pos / 40 == eye_pos[1] / 40 || (wizard_pos % 40) == (eye_pos[1] % 40)) && eye_blood[1] > 0)
             next_wizard_blood = wizard_blood > (16 * rand_test[7:6] / 4) ? (wizard_blood - 16 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos / 20 == eye_pos[2] / 20 || (wizard_pos % 20) == (eye_pos[2] % 20)) && eye_blood[2] > 0)
+        else if((wizard_pos / 40 == eye_pos[2] / 40 || (wizard_pos % 40) == (eye_pos[2] % 40)) && eye_blood[2] > 0)
             next_wizard_blood = wizard_blood > (16 * rand_test[7:6] / 4) ? (wizard_blood - 16 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos / 20 == eye_pos[3] / 20 || (wizard_pos % 20) == (eye_pos[3] % 20)) && eye_blood[3] > 0)
+        else if((wizard_pos / 40 == eye_pos[3] / 40 || (wizard_pos % 40) == (eye_pos[3] % 40)) && eye_blood[3] > 0)
             next_wizard_blood = wizard_blood > (16 * rand_test[7:6] / 4) ? (wizard_blood - 16 * rand_test[7:6] / 4) : 0;
         else
             next_wizard_blood = wizard_blood;
     // goblin's turn to attack
     else if(monster_state == 1 && animation_count == 9)
-        if((wizard_pos == goblin_pos[0] - 1 || wizard_pos == goblin_pos[0] + 1 || wizard_pos == goblin_pos[0] - 20 || wizard_pos == goblin_pos[0] + 20) && goblin_blood[0] > 0)
+        if((wizard_pos == goblin_pos[0] - 1 || wizard_pos == goblin_pos[0] + 1 || wizard_pos == goblin_pos[0] - 40 || wizard_pos == goblin_pos[0] + 40) && goblin_blood[0] > 0)
             next_wizard_blood = wizard_blood > (30 * rand_test[7:6] / 4) ? (wizard_blood - 30 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == goblin_pos[1] - 1 || wizard_pos == goblin_pos[1] + 1 || wizard_pos == goblin_pos[1] - 20 || wizard_pos == goblin_pos[1] + 20) && goblin_blood[1] > 0)
+        else if((wizard_pos == goblin_pos[1] - 1 || wizard_pos == goblin_pos[1] + 1 || wizard_pos == goblin_pos[1] - 40 || wizard_pos == goblin_pos[1] + 40) && goblin_blood[1] > 0)
             next_wizard_blood = wizard_blood > (30 * rand_test[7:6] / 4) ? (wizard_blood - 30 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == goblin_pos[2] - 1 || wizard_pos == goblin_pos[2] + 1 || wizard_pos == goblin_pos[2] - 20 || wizard_pos == goblin_pos[2] + 20) && goblin_blood[2] > 0)
+        else if((wizard_pos == goblin_pos[2] - 1 || wizard_pos == goblin_pos[2] + 1 || wizard_pos == goblin_pos[2] - 40 || wizard_pos == goblin_pos[2] + 40) && goblin_blood[2] > 0)
             next_wizard_blood = wizard_blood > (30 * rand_test[7:6] / 4) ? (wizard_blood - 30 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == goblin_pos[3] - 1 || wizard_pos == goblin_pos[3] + 1 || wizard_pos == goblin_pos[3] - 20 || wizard_pos == goblin_pos[3] + 20) && goblin_blood[3] > 0)
+        else if((wizard_pos == goblin_pos[3] - 1 || wizard_pos == goblin_pos[3] + 1 || wizard_pos == goblin_pos[3] - 40 || wizard_pos == goblin_pos[3] + 40) && goblin_blood[3] > 0)
             next_wizard_blood = wizard_blood > (30 * rand_test[7:6] / 4) ? (wizard_blood - 30 * rand_test[7:6] / 4) : 0;
         else
             next_wizard_blood = wizard_blood;
     // mushrooms' turn to attack
     else if(monster_state == 1 && animation_count == 10)
-        if((wizard_pos == mushroom_pos[0] - 1 || wizard_pos == mushroom_pos[0] + 1 || wizard_pos == mushroom_pos[0] - 20 || wizard_pos == mushroom_pos[0] + 20) && mushroom_blood[0] > 0)
+        if((wizard_pos == mushroom_pos[0] - 1 || wizard_pos == mushroom_pos[0] + 1 || wizard_pos == mushroom_pos[0] - 40 || wizard_pos == mushroom_pos[0] + 40) && mushroom_blood[0] > 0)
             next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == mushroom_pos[1] - 1 || wizard_pos == mushroom_pos[1] + 1 || wizard_pos == mushroom_pos[1] - 20 || wizard_pos == mushroom_pos[1] + 20) && mushroom_blood[1] > 0)
+        else if((wizard_pos == mushroom_pos[1] - 1 || wizard_pos == mushroom_pos[1] + 1 || wizard_pos == mushroom_pos[1] - 40 || wizard_pos == mushroom_pos[1] + 40) && mushroom_blood[1] > 0)
             next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == mushroom_pos[2] - 1 || wizard_pos == mushroom_pos[2] + 1 || wizard_pos == mushroom_pos[2] - 20 || wizard_pos == mushroom_pos[2] + 20) && mushroom_blood[2] > 0)
+        else if((wizard_pos == mushroom_pos[2] - 1 || wizard_pos == mushroom_pos[2] + 1 || wizard_pos == mushroom_pos[2] - 40 || wizard_pos == mushroom_pos[2] + 40) && mushroom_blood[2] > 0)
             next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
-        else if((wizard_pos == mushroom_pos[3] - 1 || wizard_pos == mushroom_pos[3] + 1 || wizard_pos == mushroom_pos[3] - 20 || wizard_pos == mushroom_pos[3] + 20) && mushroom_blood[3] > 0)
+        else if((wizard_pos == mushroom_pos[3] - 1 || wizard_pos == mushroom_pos[3] + 1 || wizard_pos == mushroom_pos[3] - 40 || wizard_pos == mushroom_pos[3] + 40) && mushroom_blood[3] > 0)
             next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
         else
             next_wizard_blood = wizard_blood;

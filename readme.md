@@ -59,6 +59,15 @@ ports : addra[12:0]
         clka
         douta[11:0]
 
+This one is for map index
+blk_mem_gen_8
+width : 4 bits
+depth : 1200 (40 * 30)
+module name : blk_men_gen_1
+ports : addra[10:0]
+        clka
+        douta[3:0]
+
 ## for music
 This one is for bgm left
 blk_mem_gen_msuic0
@@ -105,9 +114,9 @@ ports : addra[14:0]
 This one is for map index
 blk_mem_gen_1
 width : 4 bits
-depth : 300 (20 * 15)
+depth : 1200 (40 * 30)
 module name : blk_men_gen_1
-ports : addra[8:0]
+ports : addra[10:0]
         clka
         dina[3:0]
         douta[3:0]

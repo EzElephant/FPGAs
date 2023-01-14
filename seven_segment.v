@@ -1,12 +1,12 @@
 module seven_segment (
     input clk_div,
-    input [4:0] data0,
-    input [4:0] data1,
+    input [5:0] data0,
+    input [5:0] data1,
     output reg [6:0] DISPLAY,
     output reg [3:0] DIGIT   
 );
 
-reg [4:0] show_n;
+reg [5:0] show_n;
 reg [1:0] show;
 
 always @(posedge clk_div) begin

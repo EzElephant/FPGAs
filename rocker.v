@@ -271,7 +271,7 @@ always @(*) begin
     lr_next_counter = 0;
     case (lr_state)
         IDLE: begin
-            if (x > 825) begin
+            if (x > 800) begin
                 next_lr_state = BIG;
                 next_right = 1;
             end
@@ -279,7 +279,7 @@ always @(*) begin
 				next_lr_state = LITTLE_BIG;
                 next_right = 1;
 			end
-            else if (x < 225) begin
+            else if (x < 250) begin
                 next_lr_state = SMALL;
                 next_left = 1;
             end
@@ -290,36 +290,36 @@ always @(*) begin
         end
 		BIG: begin
 			lr_next_counter = lr_counter + 1;
-			if (x <= 825)
+			if (x <= 800)
 				next_lr_state = IDLE;
-			else if (lr_counter == 500000) begin
+			else if (lr_counter >= 250000) begin
                 next_right = 1;
                 lr_next_counter = 0;
             end
 		end
         LITTLE_BIG: begin
 			lr_next_counter = lr_counter + 1;
-            if (x <= 625)
+            if (x <= 625 || x >= 800)
                 next_lr_state = IDLE;
-            else if (lr_counter == 1000000) begin
+            else if (lr_counter >= 500000) begin
                 next_right = 1;
                 lr_next_counter = 0;
             end
         end
         LITTLE_SMALL: begin
 			lr_next_counter = lr_counter + 1;
-            if (x >= 425)
+            if (x >= 425 || x <= 250)
                 next_lr_state = IDLE;
-            else if (lr_counter == 1000000) begin
+            else if (lr_counter >= 500000) begin
                 next_left = 1;
                 lr_next_counter = 0;
             end
         end
 		SMALL: begin
 			lr_next_counter = lr_counter + 1;
-            if (x >= 225)
+            if (x >= 250)
                 next_lr_state = IDLE;
-            else if (lr_counter == 500000) begin
+            else if (lr_counter >= 250000) begin
                 next_left = 1;
                 lr_next_counter = 0;
             end
@@ -334,7 +334,7 @@ always @(*) begin
     ud_next_counter = 0;
     case (ud_state)
         IDLE: begin
-            if (y > 825) begin
+            if (y > 800) begin
                 next_ud_state = BIG;
                 next_down = 1;
             end
@@ -342,7 +342,7 @@ always @(*) begin
 				next_ud_state = LITTLE_BIG;
                 next_down = 1;
 			end
-            else if (y < 225) begin
+            else if (y < 250) begin
                 next_ud_state = SMALL;
                 next_up = 1;
             end
@@ -353,36 +353,36 @@ always @(*) begin
         end
 		BIG: begin
 			ud_next_counter = ud_counter + 1;
-			if (y <= 825)
+			if (y <= 800)
 				next_ud_state = IDLE;
-			else if (ud_counter == 500000) begin
+			else if (ud_counter >= 250000) begin
                 next_down = 1;
                 ud_next_counter = 0;
             end
 		end
         LITTLE_BIG: begin
 			ud_next_counter = ud_counter + 1;
-            if (y <= 625)
+            if (y <= 625 || y >= 800)
                 next_ud_state = IDLE;
-            else if (ud_counter == 1000000) begin
+            else if (ud_counter >= 500000) begin
                 next_down = 1;
                 ud_next_counter = 0;
             end
         end
         LITTLE_SMALL: begin
 			ud_next_counter = ud_counter + 1;
-            if (y >= 425)
+            if (y >= 425 || y <= 250)
                 next_ud_state = IDLE;
-            else if (ud_counter == 1000000) begin
+            else if (ud_counter >= 500000) begin
                 next_up = 1;
                 ud_next_counter = 0;
             end
         end
 		SMALL: begin
 			ud_next_counter = ud_counter + 1;
-            if (y >= 225)
+            if (y >= 250)
                 next_ud_state = IDLE;
-            else if (ud_counter == 500000) begin
+            else if (ud_counter >= 250000) begin
                 next_up = 1;
                 ud_next_counter = 0;
             end
