@@ -31,6 +31,8 @@ parameter TITLE = 0;
 parameter GAME = 1;
 parameter LOST = 2;
 parameter WIN = 3;
+parameter SHOW_MAP = 4;
+parameter WAIT = 5;
 
 parameter move = 2'b00;
 parameter attack = 2'b01;
@@ -54,6 +56,7 @@ wire [3:0] floor_num;
 
 // animation counter
 reg [19:0] offset_count;
+reg [17:0] show_count;
 reg [3:0] animation_count;
 
 // record which block has character
@@ -81,8 +84,7 @@ reg [6:0] skeleton_blood [0:3], next_skeleton_blood [0:3];
 reg [6:0] eye_blood [0:3], next_eye_blood [0:3];
 reg [6:0] goblin_blood [0:3], next_goblin_blood [0:3];
 reg [6:0] mushroom_blood [0:3], next_mushroom_blood [0:3];
-
-
+reg [6:0] show_blood;
 
 clock_divider clock_divider_25(.clk(clk), .clk_div(clk_div));
                     
@@ -151,7 +153,7 @@ rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .
 rocker2 rocker2(.clk(clk), .rst(rst), .MISO(MISO_2), .SS(SS_2), .MOSI(MOSI_2), .SCLK(SCLK_2),
 .left(scroll_right), .right(scroll_left), .up(scroll_down), .down(scroll_up), .click(), .down_click());
 
-seven_segment Seven_segment(.clk_div(clk_div[15]), .data0(choose_x), .data1(choose_y), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
+seven_segment Seven_segment(.clk_div(clk_div[15]), .data(show_blood), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
 
 music music(.clk(clk), .clk_25MHz(clk_div[1]), .clk_div(clk_div[21]), .rst(rst), 
 .effect_control(), ._volUP(btn_up_pulse), ._volDOWN(btn_down_pulse),
@@ -206,7 +208,7 @@ always @(posedge clk) begin
     if (rst || game_rst) begin
         choose_x <= 6;
         choose_y <= 6;
-        scroll_x <= 0;
+        scroll_x <= 640;
         scroll_y <= 0;
     end
     else begin
@@ -245,6 +247,9 @@ always @(*) begin
         if (scroll_right && scroll_x != 640)
             next_scroll_x = scroll_x + 1;  
     end
+    else if (game_state == SHOW_MAP && show_count == 9487) begin
+        next_scroll_x = scroll_x - 1;
+    end
 end
 
 // game state FSM
@@ -260,7 +265,7 @@ always @(*) begin
     case (game_state)
         TITLE: begin
             if (down_click_pulse)
-                next_game_state = GAME;
+                next_game_state = WAIT;
         end
         GAME: begin
             if (btn_left_pulse || ((knight_blood == 0) && (wizard_blood == 0))) begin
@@ -282,13 +287,28 @@ always @(*) begin
             if (click_pulse)
                 next_game_state = TITLE;
         end
+        SHOW_MAP: begin
+            if (scroll_x == 0)
+                next_game_state = GAME;
+        end
+        WAIT: begin
+            if (click_pulse)
+                next_game_state = SHOW_MAP;
+        end
     endcase
 end
 
 always @(*) begin
     game_rst = 1;
-    if (game_state == GAME)
+    if (game_state == GAME || game_state == SHOW_MAP || game_state == WAIT)
         game_rst = 0;
+end
+
+always @(posedge clk) begin
+    if (show_count == 500000)
+        show_count <= 0;
+    else
+        show_count <= show_count + 1;
 end
 
 // offset counter for animation counter
@@ -1024,6 +1044,46 @@ always @(*) begin
         endcase
 end
 
+always @(*) begin
+    if (selected_pos == knight_pos)
+        show_blood = knight_blood;
+    else if (selected_pos == wizard_pos)
+        show_blood = wizard_blood;
+    else if (selected_pos == skeleton_pos[0])
+        show_blood = skeleton_blood[0];
+    else if (selected_pos == skeleton_pos[1])
+        show_blood = skeleton_blood[1];
+    else if (selected_pos == skeleton_pos[2])
+        show_blood = skeleton_blood[2];
+    else if (selected_pos == skeleton_pos[3])
+        show_blood = skeleton_blood[3];
+    else if (selected_pos == eye_pos[0])
+        show_blood = eye_blood[0];
+    else if (selected_pos == eye_pos[1])
+        show_blood = eye_blood[1];
+    else if (selected_pos == eye_pos[2])
+        show_blood = eye_blood[2];
+    else if (selected_pos == eye_pos[3])
+        show_blood = eye_blood[3];
+    else if (selected_pos == goblin_pos[0])
+        show_blood = goblin_blood[0];
+    else if (selected_pos == goblin_pos[1])
+        show_blood = goblin_blood[1];
+    else if (selected_pos == goblin_pos[2])
+        show_blood = goblin_blood[2];
+    else if (selected_pos == goblin_pos[3])
+        show_blood = goblin_blood[3];
+    else if (selected_pos == mushroom_pos[0])
+        show_blood = mushroom_blood[0];
+    else if (selected_pos == mushroom_pos[1])
+        show_blood = mushroom_blood[1];
+    else if (selected_pos == mushroom_pos[2])
+        show_blood = mushroom_blood[2];
+    else if (selected_pos == mushroom_pos[3])
+        show_blood = mushroom_blood[3];
+    else
+        show_blood = 0;
+end
 
 endmodule
 

@@ -378,7 +378,13 @@ always @(*) begin
             0: begin // TITLE
                 final_pixel = title_pixel;
             end
-            1: begin // GAME
+            2: begin // LOST
+                final_pixel = lost_scene_pixel;
+            end
+            3: begin // WIN
+                final_pixel = win_scene_pixel;
+            end
+            default: begin // GAME
                 // selected block
                 if(map_addr == selected_pos)
                     case(player_state)
@@ -441,12 +447,6 @@ always @(*) begin
                         default:
                             final_pixel = first_layer_pixel;
                     endcase
-            end
-            2: begin // LOST
-                final_pixel = lost_scene_pixel;
-            end
-            3: begin // WIN
-                final_pixel = win_scene_pixel;
             end
         endcase
     else
