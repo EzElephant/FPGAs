@@ -11,6 +11,8 @@ module vga(
     input [1:0] knight_state,
     input [1:0] wizard_state,
     input monster_state,
+    input [8:0] scroll_x,
+    input [8:0] scroll_y,
     input [8:0] action_pos,
     input [8:0] selected_pos,
     input [8:0] knight_pos,
@@ -39,7 +41,7 @@ module vga(
 );
 
 wire valid;
-wire [9:0] h_cnt, v_cnt;
+wire [9:0] ori_h_cnt, ori_v_cnt;
 wire [11:0] pixel;
 wire [11:0] knight_pixel;
 wire [11:0] wizard_pixel;
@@ -52,6 +54,7 @@ reg [13:0] pixel_addr;
 reg [12:0] knight_addr;
 reg [12:0] wizard_addr;
 reg [12:0] monster_addr;
+reg [9:0] h_cnt, v_cnt;
 reg [8:0] map_addr;
 reg [3:0] write_texture_num;
 wire [3:0] texture_num;
@@ -77,7 +80,7 @@ reg [2:0] monster_anim_num, next_monster_anim;
 
 
 vga_controller VGA(.pclk(clk_25MHz), .reset(rst), .hsync(hsync), .vsync(vsync), 
-                    .valid(valid), .h_cnt(h_cnt), .v_cnt(v_cnt));
+                    .valid(valid), .h_cnt(ori_h_cnt), .v_cnt(ori_v_cnt));
 
 blk_mem_gen_0 blk_mem_gen_0_inst(.clka(clk_25MHz), .addra(pixel_addr), .douta(pixel));
 
@@ -114,6 +117,14 @@ initial begin
     mushroom_pos[2] = 176;
     mushroom_pos[1] = 256;
     mushroom_pos[0] = 252;
+end
+
+// caculate scroll window h_cnt v_cnt
+always @(*) begin
+    // h_cnt = ori_h_cnt + scroll_x;
+    // v_cnt = ori_v_cnt + scroll_y;
+    h_cnt = ori_h_cnt;
+    v_cnt = ori_v_cnt;
 end
 
 

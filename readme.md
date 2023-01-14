@@ -57,6 +57,22 @@ ports : addra[12:0]
         clka
         douta[11:0]
 
+This one is for bgm left
+blk_mem_gen_msuic0
+width : 5 bits (freq_num)
+depth : 1200 (1 dimension)
+ports : addra[10:0]
+        clka
+        douta[4:0]
+
+This one is for bgm right
+blk_mem_gen_msuic1
+width : 5 bits (freq_num)
+depth : 1200 (1 dimension)
+ports : addra[10:0]
+        clka
+        douta[4:0]
+
 # for block memory (RAM)
 This one is for map index
 blk_mem_gen_1

@@ -60,6 +60,8 @@ vga VGA(.clk_25MHz(clk_div[1]),
         .knight_state(knight_state),
         .wizard_state(wizard_state),
         .monster_state(monster_state),
+        .scroll_x(scroll_x),
+        .scroll_y(scroll_y),
         .action_pos(action_pos),
         .selected_pos(selected_pos),
         .knight_pos(knight_pos),
@@ -84,7 +86,7 @@ rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .
 .left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(click), .down_click(down_click));
 
 rocker2 rocker2(.clk(clk), .rst(rst), .MISO(MISO_2), .SS(SS_2), .MOSI(MOSI_2), .SCLK(SCLK_2),
-.left(scroll_right), .right(scroll_left), .up(scroll_up), .down(scroll_down), .click(), .down_click());
+.left(scroll_right), .right(scroll_left), .up(scroll_down), .down(scroll_up), .click(), .down_click());
 
 seven_segment Seven_segment(.clk_div(clk_div[15]), .data0(choose_x), .data1(choose_y), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
 
@@ -121,14 +123,14 @@ end
 always @(*) begin
     next_scroll_x = scroll_x;
     next_scroll_y = scroll_y;
-    if (scroll_up && choose_y != 0)
-        next_scroll_y = choose_y - 1;
-    if (scroll_down && choose_y != 480)
-        next_scroll_y = choose_y + 1;
-    if (scroll_left && choose_x != 0)
-        next_scroll_x = choose_x - 1;
-    if (scroll_right && choose_x != 640)
-        next_scroll_x = choose_x + 1;  
+    if (scroll_up && scroll_y != 0)
+        next_scroll_y = scroll_y - 1;
+    if (scroll_down && scroll_y != 480)
+        next_scroll_y = scroll_y + 1;
+    if (scroll_left && scroll_x != 0)
+        next_scroll_x = scroll_x - 1;
+    if (scroll_right && scroll_x != 640)
+        next_scroll_x = scroll_x + 1;  
 end
 
 // offset counter for animation counter
