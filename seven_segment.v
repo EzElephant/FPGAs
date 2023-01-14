@@ -1,7 +1,6 @@
 module seven_segment (
     input clk_div,
-    input [5:0] data0,
-    input [5:0] data1,
+    input [6:0] data,
     output reg [6:0] DISPLAY,
     output reg [3:0] DIGIT   
 );
@@ -25,11 +24,13 @@ end
 
 always @(*)
 begin
+    if (data == 0)
+        show_n = 10;
     case (show)
-        0: show_n = data0 / 10;
-        1: show_n = data0 % 10;
-        2: show_n = data1 / 10;
-        3: show_n = data1 % 10;
+        0: show_n = data / 1000;
+        1: show_n = (data / 100) % 10;
+        2: show_n = (data / 10) % 10;
+        3: show_n = data % 10;
     endcase
 end
 
