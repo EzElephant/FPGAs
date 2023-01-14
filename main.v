@@ -3,6 +3,8 @@ module FPGAs(
     input rst, // BTNC
     input btn_up, // for music volume control
     input btn_down, // for music volume control
+    input btn_left, // debug for lost
+    input btn_right, // debug for win
     input MISO_1, // for rocker
     input MISO_2, // for rocker
     output SS_1, // for rocker
@@ -25,19 +27,26 @@ module FPGAs(
     output audio_sdin // for music
 );
 
+parameter TITLE = 0;
+parameter GAME = 1;
+parameter LOST = 2;
+parameter WIN = 3;
+
 parameter move = 2'b00;
 parameter attack = 2'b01;
 parameter hit = 2'b10;
 parameter idle = 2'b11;
 
 wire click, down_click;
-wire click_d, down_click_d, btn_up_d, btn_down_d;
-wire click_pulse, down_click_pulse, btn_up_pulse, btn_down_pulse;
+wire click_d, down_click_d, btn_up_d, btn_down_d, btn_left_d, btn_right_d;
+wire click_pulse, down_click_pulse, btn_up_pulse, btn_down_pulse, btn_left_pulse, btn_right_pulse;
 wire move_left, move_right, move_up, move_down;
 wire scroll_left, scroll_right, scroll_up, scroll_down;
 wire [26:0] clk_div;
 wire [7:0] rand_test;
+reg game_rst; // for another round
 reg [2:0] i, j, k;
+reg [3:0] game_state, next_game_state;
 reg [4:0] choose_x, choose_y, next_choose_x, next_choose_y;
 reg [8:0] write_count, next_write_count;
 reg [8:0] scroll_x, scroll_y, next_scroll_x, next_scroll_y;
@@ -78,6 +87,7 @@ reg [6:0] mushroom_blood [0:3], next_mushroom_blood [0:3];
 clock_divider clock_divider_25(.clk(clk), .clk_div(clk_div));
                     
 vga VGA(.clk_25MHz(clk_div[1]),
+        .game_state(game_state),
         .animation_count(animation_count),
         .player_state(player_state),
         .knight_state(knight_state),
@@ -128,6 +138,12 @@ one_pulse btn_up_1pulse(.clk(clk), .pb_in(btn_up_d), .pb_out(btn_up_pulse));
 
 debounce btn_down_debounce(.clk(clk), .pb(btn_down), .pb_debounced(btn_down_d));
 one_pulse btn_down_1pulse(.clk(clk), .pb_in(btn_down_d), .pb_out(btn_down_pulse));
+
+debounce btn_left_debounce(.clk(clk), .pb(btn_left), .pb_debounced(btn_left_d));
+one_pulse btn_left_1pulse(.clk(clk), .pb_in(btn_left_d), .pb_out(btn_left_pulse));
+
+debounce btn_right_debounce(.clk(clk), .pb(btn_right), .pb_debounced(btn_right_d));
+one_pulse btn_right_1pulse(.clk(clk), .pb_in(btn_right_d), .pb_out(btn_right_pulse));
 
 rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .SCLK(SCLK_1),
 .left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(click), .down_click(down_click));
@@ -187,9 +203,9 @@ initial begin
 end
 
 always @(posedge clk) begin
-    if (rst) begin
-        choose_x <= 7;
-        choose_y <= 7;
+    if (rst || game_rst) begin
+        choose_x <= 6;
+        choose_y <= 6;
         scroll_x <= 0;
         scroll_y <= 0;
     end
@@ -204,32 +220,80 @@ end
 always @(*) begin
     next_choose_x = choose_x;
     next_choose_y = choose_y;
-    if (move_up && choose_y != 0)
-        next_choose_y = choose_y - 1;
-    if (move_down && choose_y != 14)
-        next_choose_y = choose_y + 1;
-    if (move_left && choose_x != 0)
-        next_choose_x = choose_x - 1;
-    if (move_right && choose_x != 19)
-        next_choose_x = choose_x + 1;  
+    if (game_state == GAME) begin
+        if (move_up && choose_y != 0)
+            next_choose_y = choose_y - 1;
+        if (move_down && choose_y != 14)
+            next_choose_y = choose_y + 1;
+        if (move_left && choose_x != 0)
+            next_choose_x = choose_x - 1;
+        if (move_right && choose_x != 19)
+            next_choose_x = choose_x + 1;
+    end
 end
 
 always @(*) begin
     next_scroll_x = scroll_x;
     next_scroll_y = scroll_y;
-    if (scroll_up && scroll_y != 0)
-        next_scroll_y = scroll_y - 1;
-    if (scroll_down && scroll_y != 480)
-        next_scroll_y = scroll_y + 1;
-    if (scroll_left && scroll_x != 0)
-        next_scroll_x = scroll_x - 1;
-    if (scroll_right && scroll_x != 640)
-        next_scroll_x = scroll_x + 1;  
+    if (game_state == GAME) begin
+        if (scroll_up && scroll_y != 0)
+            next_scroll_y = scroll_y - 1;
+        if (scroll_down && scroll_y != 480)
+            next_scroll_y = scroll_y + 1;
+        if (scroll_left && scroll_x != 0)
+            next_scroll_x = scroll_x - 1;
+        if (scroll_right && scroll_x != 640)
+            next_scroll_x = scroll_x + 1;  
+    end
+end
+
+// game state FSM
+always @(posedge clk_div[1]) begin
+    if (rst)
+        game_state <= TITLE;
+    else
+        game_state <= next_game_state;
+end
+
+always @(*) begin
+    next_game_state = game_state;
+    case (game_state)
+        TITLE: begin
+            if (down_click_pulse)
+                next_game_state = GAME;
+        end
+        GAME: begin
+            if (btn_left_pulse || ((knight_blood == 0) && (wizard_blood == 0))) begin
+                next_game_state = LOST;
+            end
+            else if (btn_right_pulse || 
+            ((skeleton_blood[0] == 0) && (skeleton_blood[1] == 0) && (skeleton_blood[2] == 0) && (skeleton_blood[3] == 0) &&
+            (eye_blood[0] == 0) && (eye_blood[1] == 0) && (eye_blood[2] == 0) && (eye_blood[3] == 0) &&
+            (goblin_blood[0] == 0) && (goblin_blood[1] == 0) && (goblin_blood[2] == 0) && (goblin_blood[3] == 0) &&
+            (mushroom_blood[0] == 0) && (mushroom_blood[1] == 0) && (mushroom_blood[2] == 0) && (mushroom_blood[3] == 0))) begin
+                next_game_state = WIN;
+            end
+        end
+        LOST: begin
+            if (click_pulse)
+                next_game_state = TITLE;
+        end
+        WIN: begin
+            if (click_pulse)
+                next_game_state = TITLE;
+        end
+    endcase
+end
+
+always @(*) begin
+    game_rst = 1;
+    if (game_state == GAME)
+        game_rst = 0;
 end
 
 // offset counter for animation counter
 always @(posedge clk_div[1]) begin
-    if(rst || down_click_pulse)
+    if(rst || down_click_pulse || game_rst)
         offset_count <= 0;
     else
         offset_count <= offset_count + 1;
@@ -250,7 +314,7 @@ end
 
 // player FSM
 always @(posedge clk_div[1]) begin
-    if(rst)
+    if(rst || game_rst)
         player_state <= move;
     else
         player_state <= next_player_state;
@@ -293,7 +357,7 @@ end
 
 // knight_state
 always @(posedge clk_div[1]) begin
-    if(rst)
+    if(rst || game_rst)
         knight_state <= idle;
     else 
         knight_state <= next_knight_state;
@@ -333,7 +397,7 @@ end
 
 // wizard_state
 always @(posedge clk_div[1]) begin
-    if(rst)
+    if(rst || game_rst)
         wizard_state <= idle;
     else 
         wizard_state <= next_wizard_state;
@@ -385,7 +449,7 @@ end
 
 // monster_state
 always @(posedge clk_div[1]) begin
-    if(rst)
+    if(rst || game_rst)
         monster_state <= 0;
     else 
         monster_state <= next_monster_state;
@@ -408,7 +472,7 @@ end
 
 // knight energy => knight has 4 steps
 always @(posedge clk_div[1]) begin
-    if(rst)
+    if(rst || game_rst)
         knight_energy <= 0;
     else
         knight_energy = next_knight_energy;
@@ -440,7 +504,7 @@ end
 
 // action character position
 always @(posedge clk_div[1]) begin
-    if(rst)
+    if(rst || game_rst)
         action_pos <= knight_pos;
     else
         action_pos <= next_action_pos;
@@ -505,7 +569,7 @@ end
 // character moving system 
 // knight_pos 
 always @(posedge clk_div[1]) begin
-    if(rst)
+    if(rst || game_rst)
         knight_pos <= 125;
     else
         knight_pos <= next_knight_pos;
@@ -537,7 +601,7 @@ end
 
 // wizard_pos
 always @(posedge clk_div[1]) begin
-    if(rst)
+    if(rst || game_rst)
         wizard_pos <= 164;
     else
         wizard_pos <= next_wizard_pos;
@@ -568,7 +632,7 @@ end
 
 // skeleton_pos => for releasing space after dead
 always @(posedge clk_div[1]) begin
-    if(rst) begin
+    if(rst || game_rst) begin
         skeleton_pos[3] <= 63;
         skeleton_pos[2] <= 97;
         skeleton_pos[1] <= 94;
@@ -585,7 +649,7 @@ end
 
 // eye_pos => for releasing space after dead
 always @(posedge clk_div[1]) begin
-    if(rst) begin
+    if(rst || game_rst) begin
         eye_pos[3] <= 144;
         eye_pos[2] <= 167;
         eye_pos[1] <= 129;
@@ -602,7 +666,7 @@ end
 
 // skeleton_pos => for releasing space after dead
 always @(posedge clk_div[1]) begin
-    if(rst) begin
+    if(rst || game_rst) begin
         goblin_pos[3] <= 77;
         goblin_pos[2] <= 197;
         goblin_pos[1] <= 194;
@@ -619,7 +683,7 @@ end
 
 // skeleton_pos => for releasing space after dead
 always @(posedge clk_div[1]) begin
-    if(rst) begin
+    if(rst || game_rst) begin
         mushroom_pos[3] <= 137;
         mushroom_pos[2] <= 176;
         mushroom_pos[1] <= 256;
@@ -639,7 +703,7 @@ end
 // attack and blood system
 // knight blood
 always @(posedge clk_div[21]) begin
-    if(rst)
+    if(rst || game_rst)
         knight_blood <= 127;
     else
         knight_blood <= next_knight_blood;
@@ -700,7 +764,7 @@ end
 
 // wizard blood
 always @(posedge clk_div[21]) begin
-    if(rst)
+    if(rst || game_rst)
         wizard_blood <= 80;
     else
         wizard_blood <= next_wizard_blood;
@@ -762,7 +826,7 @@ end
 // monster's blood
 // skeleton
 always @(posedge clk_div[21]) begin
-    if(rst) begin
+    if(rst || game_rst) begin
         skeleton_blood[0] <= 40;
         skeleton_blood[1] <= 40;
         skeleton_blood[2] <= 40;
@@ -812,7 +876,7 @@ end
 
 // eye
 always @(posedge clk_div[21]) begin
-    if(rst) begin
+    if(rst || game_rst) begin
         eye_blood[0] <= 25;
         eye_blood[1] <= 25;
         eye_blood[2] <= 25;
@@ -862,7 +926,7 @@ end
 
 // goblin
 always @(posedge clk_div[21]) begin
-    if(rst) begin
+    if(rst || game_rst) begin
         goblin_blood[0] <= 16;
         goblin_blood[1] <= 16;
         goblin_blood[2] <= 16;
@@ -912,7 +976,7 @@ end
 
 // mushroom
 always @(posedge clk_div[21]) begin
-    if(rst) begin
+    if(rst || game_rst) begin
         mushroom_blood[0] <= 60;
         mushroom_blood[1] <= 60;
         mushroom_blood[2] <= 60;

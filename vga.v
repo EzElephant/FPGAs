@@ -6,6 +6,7 @@
 
 module vga(
     input clk_25MHz,
+    input [3:0] game_state,
     input [3:0] animation_count,
     input [1:0] player_state,
     input [1:0] knight_state,
@@ -49,11 +50,17 @@ wire [11:0] skeleton_pixel;
 wire [11:0] eye_pixel;
 wire [11:0] goblin_pixel;
 wire [11:0] mushroom_pixel;
+wire [11:0] title_pixel;
+wire [11:0] lost_scene_pixel;
+wire [11:0] win_scene_pixel;
 reg [11:0] first_layer_pixel;
 reg [13:0] pixel_addr;
 reg [12:0] knight_addr;
 reg [12:0] wizard_addr;
 reg [12:0] monster_addr;
+reg [14:0] title_addr;
+reg [14:0] lost_scene_addr;
+reg [14:0] win_scene_addr;
 reg [9:0] h_cnt, v_cnt;
 reg [8:0] map_addr;
 reg [3:0] write_texture_num;
@@ -92,6 +99,11 @@ blk_mem_gen_4 skeleton_num(.clka(clk_25MHz), .addra(monster_addr), .douta(skelet
 blk_mem_gen_5 eye_num(.clka(clk_25MHz), .addra(monster_addr), .douta(eye_pixel));
 blk_mem_gen_6 goblin_num(.clka(clk_25MHz), .addra(monster_addr), .douta(goblin_pixel));
 blk_mem_gen_7 mushroom_num(.clka(clk_25MHz), .addra(monster_addr), .douta(mushroom_pixel));
+
+// blk_mem_gen_scene for scene
+blk_mem_gen_scene_0 title(.clka(clk_25MHz), .addra(title_addr), .douta(title_pixel));
+blk_mem_gen_scene_1 lost_scene(.clka(clk_25MHz), .addra(lost_scene_addr), .douta(lost_scene_pixel));
+blk_mem_gen_scene_2 win_scene(.clka(clk_25MHz), .addra(win_scene_addr), .douta(win_scene_pixel));
 
 // attach gamecontrol module or that part here
 
@@ -151,6 +163,21 @@ end
 // background addr
 always @(*) begin
     pixel_addr = (h_cnt & 5'b11111) + 32 * ((v_cnt & 5'b11111) + texture_num * 32);
+end
+
+// title addr
+always @(*) begin
+    title_addr = (h_cnt >> 2) + 160 * (v_cnt >> 2);
+end
+
+// lost_scene addr
+always @(*) begin
+    lost_scene_addr = (h_cnt >> 2) + 160 * (v_cnt >> 2);
+end
+
+// win_scene addr
+always @(*) begin
+    win_scene_addr = (h_cnt >> 2) + 160 * (v_cnt >> 2);
 end
 
 // first_layer
@@ -347,64 +374,81 @@ end
 // final_pixel
 always @(*) begin
     if (valid)
-        // selected block
-        if(map_addr == selected_pos)
-            case(player_state)
-                move:  // selected block for movement
-                    if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
-                        final_pixel = 12'h4Af;
-                    else
-                        final_pixel = first_layer_pixel + 12'h010;
-                attack:  // selected block for attack
-                    if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
-                        final_pixel = 12'hF22;
-                    else
-                        final_pixel = first_layer_pixel + 12'h100;
-                default:
-                    final_pixel = first_layer_pixel;
-            endcase
-        else if(action_pos == knight_pos)   // select range for knight
-            case(player_state)
-                move:  // move
-                    if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 20 || map_addr == action_pos + 20) && texture_num < 3)   // 4-direction
-                        if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
-                            final_pixel = 12'h4Af;
-                        else
+        case (game_state)
+            0: begin // TITLE
+                final_pixel = title_pixel;
+            end
+            1: begin // GAME
+                // selected block
+                if(map_addr == selected_pos)
+                    case(player_state)
+                        move:  // selected block for movement
+                            if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                                final_pixel = 12'h4Af;
+                            else if ((first_layer_pixel == 12'hFFF) || (first_layer_pixel == 12'hC00))
+                                final_pixel = first_layer_pixel;
+                            else
+                                final_pixel = first_layer_pixel + 12'h010;
+                        attack:  // selected block for attack
+                            if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                                final_pixel = 12'hF22;
+                            else if ((first_layer_pixel == 12'hFFF) || (first_layer_pixel == 12'hC00))
+                                final_pixel = first_layer_pixel;
+                            else
+                                final_pixel = first_layer_pixel + 12'h100;
+                        default:
                             final_pixel = first_layer_pixel;
-                    else
-                        final_pixel = first_layer_pixel;
-                attack:  // attack
-                    if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 20 || map_addr == action_pos + 20) && texture_num < 3)   // 4-direction
-                        if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
-                            final_pixel = 12'hF22;
-                        else
+                    endcase
+                else if(action_pos == knight_pos)   // select range for knight
+                    case(player_state)
+                        move:  // move
+                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 20 || map_addr == action_pos + 20) && texture_num < 3)   // 4-direction
+                                if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                                    final_pixel = 12'h4Af;
+                                else
+                                    final_pixel = first_layer_pixel;
+                            else
+                                final_pixel = first_layer_pixel;
+                        attack:  // attack
+                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 20 || map_addr == action_pos + 20) && texture_num < 3)   // 4-direction
+                                if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                                    final_pixel = 12'hF22;
+                                else
+                                    final_pixel = first_layer_pixel;
+                            else
+                                final_pixel = first_layer_pixel;
+                        default:
                             final_pixel = first_layer_pixel;
-                    else
-                        final_pixel = first_layer_pixel;
-                default:
-                    final_pixel = first_layer_pixel;
-            endcase
-        else    // select range for wizard
-            case(player_state)
-                move:  // move
-                    if((map_addr / 20 == action_pos / 20 || map_addr % 20 == action_pos % 20) && texture_num < 3)   // 大十字
-                        if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
-                            final_pixel = 12'h4Af;
-                        else
+                    endcase
+                else    // select range for wizard
+                    case(player_state)
+                        move:  // move
+                            if((map_addr / 20 == action_pos / 20 || map_addr % 20 == action_pos % 20) && texture_num < 3)   // 大十字
+                                if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                                    final_pixel = 12'h4Af;
+                                else
+                                    final_pixel = first_layer_pixel;
+                            else
+                                final_pixel = first_layer_pixel;
+                        attack:  // attack
+                            if((map_addr / 20 == action_pos / 20 || map_addr % 20 == action_pos % 20) && texture_num < 3)   
+                                if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
+                                    final_pixel = 12'hF22;
+                                else
+                                    final_pixel = first_layer_pixel;
+                            else
+                                final_pixel = first_layer_pixel;
+                        default:
                             final_pixel = first_layer_pixel;
-                    else
-                        final_pixel = first_layer_pixel;
-                attack:  // attack
-                    if((map_addr / 20 == action_pos / 20 || map_addr % 20 == action_pos % 20) && texture_num < 3)   
-                        if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
-                            final_pixel = 12'hF22;
-                        else
-                            final_pixel = first_layer_pixel;
-                    else
-                        final_pixel = first_layer_pixel;
-                default:
-                    final_pixel = first_layer_pixel;
-            endcase
+                    endcase
+            end
+            2: begin // LOST
+                final_pixel = lost_scene_pixel;
+            end
+            3: begin // WIN
+                final_pixel = win_scene_pixel;
+            end
+        endcase
     else
         final_pixel = 0;
 end
