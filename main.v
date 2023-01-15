@@ -2,6 +2,8 @@ module FPGAs(
     input clk, // 100MHz clock
     input rst, // BTNC
     input cheat_mode,
+    input [7:0] player_boost,
+    input [6:0] monster_boost,
     input btn_up, // for music volume control
     input btn_down, // for music volume control
     input btn_left, // debug for lost
@@ -19,7 +21,7 @@ module FPGAs(
     output [3:0] vgaBlue, // for vga
     output hsync, // for vga
     output vsync, // for vga
-    output [7:0] LED, // for LED display
+    output [15:0] LED, // for LED display
     output [6:0] DISPLAY, // for vga
     output [3:0] DIGIT, // for vga
     output audio_mclk, // for music
@@ -53,6 +55,7 @@ reg [3:0] game_state, next_game_state;
 reg [5:0] choose_x, choose_y, next_choose_x, next_choose_y;
 reg [8:0] write_count, next_write_count;
 reg [10:0] scroll_x, scroll_y, next_scroll_x, next_scroll_y;
+wire [10:0] player_strength, monster_strength;
 wire [3:0] floor_num;
 
 // animation counter
@@ -128,7 +131,11 @@ vga VGA(.clk_25MHz(clk_div[1]),
 
 LSFR random_gen(.clk(clk_div[21]), .rand_num(rand_test), .rst(rst));
 
-assign LED[2:0] = {action_pos == knight_pos, action_pos == wizard_pos, action_pos == 0};
+// Use LED to display whether the monster die or not.
+assign LED[15:0] = {skeleton_blood[0] != 0, skeleton_blood[1] != 0, skeleton_blood[2] != 0, skeleton_blood[3] != 0,
+                    goblin_blood[0] != 0, goblin_blood[1] != 0, goblin_blood[2] != 0, goblin_blood[3] != 0,
+                    mushroom_blood[0] != 0, mushroom_blood[1] != 0, mushroom_blood[2] != 0, mushroom_blood[3] != 0,
+                    eye_blood[0] != 0, eye_blood[1] != 0, eye_blood[2] != 0, eye_blood[3] != 0};
 
 debounce cen_push(.clk(clk_div[1]), .pb(click), .pb_debounced(click_d));
 one_pulse cen_push_pulse(.clk(clk_div[1]), .pb_in(click_d), .pb_out(click_pulse));
@@ -249,7 +256,10 @@ always @(*) begin
             next_scroll_x = scroll_x + 1;  
     end
     else if (game_state == SHOW_MAP && show_count == 9487) begin
-        next_scroll_x = scroll_x - 1;
+        if (scroll_y < 480)
+            next_scroll_y = scroll_y + 1;
+        else if (scroll_x > 0)
+            next_scroll_x = scroll_x - 1;
     end
 end
 
@@ -718,6 +728,10 @@ end
 
 
 // attack and blood system
+
+assign player_strength = player_boost[0] + player_boost[1] + player_boost[2] + player_boost[3] + player_boost[4] + player_boost[5] + player_boost[6] + player_boost[7];
+assign monster_strength = monster_boost[0] + monster_boost[1] + monster_boost[2] + monster_boost[3] + monster_boost[4] + monster_boost[5] + monster_boost[6];
+
 // knight blood
 always @(posedge clk_div[21]) begin
     if(rst || game_rst)
@@ -730,49 +744,49 @@ always @(*) begin
     // skeleton's turn to attack
     if(monster_state == 1 && animation_count == 7)
         if((knight_pos == skeleton_pos[0] - 1 || knight_pos == skeleton_pos[0] + 1 || knight_pos == skeleton_pos[0] - 40 || knight_pos == skeleton_pos[0] + 40) && skeleton_blood[0] > 0)
-            next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == skeleton_pos[1] - 1 || knight_pos == skeleton_pos[1] + 1 || knight_pos == skeleton_pos[1] - 40 || knight_pos == skeleton_pos[1] + 40) && skeleton_blood[1] > 0)
-            next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == skeleton_pos[2] - 1 || knight_pos == skeleton_pos[2] + 1 || knight_pos == skeleton_pos[2] - 40 || knight_pos == skeleton_pos[2] + 40) && skeleton_blood[2] > 0)
-            next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == skeleton_pos[3] - 1 || knight_pos == skeleton_pos[3] + 1 || knight_pos == skeleton_pos[3] - 40 || knight_pos == skeleton_pos[3] + 40) && skeleton_blood[3] > 0)
-            next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else
             next_knight_blood = knight_blood;
     // eyes' turn to attack
     else if(monster_state == 1 && animation_count == 8)
         if((knight_pos / 40 == eye_pos[0] / 40 || (knight_pos % 40) == (eye_pos[0] % 40)) && eye_blood[0] > 0)
-            next_knight_blood = knight_blood > (16 * rand_test[7:6] / 4) ? (knight_blood - 16 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((16 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (16 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos / 40 == eye_pos[1] / 40 || (knight_pos % 40) == (eye_pos[1] % 40)) && eye_blood[1] > 0)
-            next_knight_blood = knight_blood > (16 * rand_test[7:6] / 4) ? (knight_blood - 16 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((16 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (16 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos / 40 == eye_pos[2] / 40 || (knight_pos % 40) == (eye_pos[2] % 40)) && eye_blood[2] > 0)
-            next_knight_blood = knight_blood > (16 * rand_test[7:6] / 4) ? (knight_blood - 16 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((16 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (16 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos / 40 == eye_pos[3] / 40 || (knight_pos % 40) == (eye_pos[3] % 40)) && eye_blood[3] > 0)
-            next_knight_blood = knight_blood > (16 * rand_test[7:6] / 4) ? (knight_blood - 16 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((16 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (16 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else
             next_knight_blood = knight_blood;
     // goblin's turn to attack
     else if(monster_state == 1 && animation_count == 9)
         if((knight_pos == goblin_pos[0] - 1 || knight_pos == goblin_pos[0] + 1 || knight_pos == goblin_pos[0] - 40 || knight_pos == goblin_pos[0] + 40) && goblin_blood[0] > 0)
-            next_knight_blood = knight_blood > (30 * rand_test[7:6] / 4) ? (knight_blood - 30 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((30 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (30 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == goblin_pos[1] - 1 || knight_pos == goblin_pos[1] + 1 || knight_pos == goblin_pos[1] - 40 || knight_pos == goblin_pos[1] + 40) && goblin_blood[1] > 0)
-            next_knight_blood = knight_blood > (30 * rand_test[7:6] / 4) ? (knight_blood - 30 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((30 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (30 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == goblin_pos[2] - 1 || knight_pos == goblin_pos[2] + 1 || knight_pos == goblin_pos[2] - 40 || knight_pos == goblin_pos[2] + 40) && goblin_blood[2] > 0)
-            next_knight_blood = knight_blood > (30 * rand_test[7:6] / 4) ? (knight_blood - 30 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((30 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (30 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == goblin_pos[3] - 1 || knight_pos == goblin_pos[3] + 1 || knight_pos == goblin_pos[3] - 40 || knight_pos == goblin_pos[3] + 40) && goblin_blood[3] > 0)
-            next_knight_blood = knight_blood > (30 * rand_test[7:6] / 4) ? (knight_blood - 30 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((30 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (30 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else
             next_knight_blood = knight_blood;
     // mushrooms' turn to attack
     else if(monster_state == 1 && animation_count == 10)
         if((knight_pos == mushroom_pos[0] - 1 || knight_pos == mushroom_pos[0] + 1 || knight_pos == mushroom_pos[0] - 40 || knight_pos == mushroom_pos[0] + 40) && mushroom_blood[0] > 0)
-            next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == mushroom_pos[1] - 1 || knight_pos == mushroom_pos[1] + 1 || knight_pos == mushroom_pos[1] - 40 || knight_pos == mushroom_pos[1] + 40) && mushroom_blood[1] > 0)
-            next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == mushroom_pos[2] - 1 || knight_pos == mushroom_pos[2] + 1 || knight_pos == mushroom_pos[2] - 40 || knight_pos == mushroom_pos[2] + 40) && mushroom_blood[2] > 0)
-            next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((knight_pos == mushroom_pos[3] - 1 || knight_pos == mushroom_pos[3] + 1 || knight_pos == mushroom_pos[3] - 40 || knight_pos == mushroom_pos[3] + 40) && mushroom_blood[3] > 0)
-            next_knight_blood = knight_blood > (24 * rand_test[7:6] / 4) ? (knight_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_knight_blood = knight_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (knight_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else
             next_knight_blood = knight_blood;
     else
@@ -791,49 +805,49 @@ always @(*) begin
     // skeleton's turn to attack
     if(monster_state == 1 && animation_count == 7)
         if((wizard_pos == skeleton_pos[0] - 1 || wizard_pos == skeleton_pos[0] + 1 || wizard_pos == skeleton_pos[0] - 40 || wizard_pos == skeleton_pos[0] + 40) && skeleton_blood[0] > 0)
-            next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == skeleton_pos[1] - 1 || wizard_pos == skeleton_pos[1] + 1 || wizard_pos == skeleton_pos[1] - 40 || wizard_pos == skeleton_pos[1] + 40) && skeleton_blood[1] > 0)
-            next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == skeleton_pos[2] - 1 || wizard_pos == skeleton_pos[2] + 1 || wizard_pos == skeleton_pos[2] - 40 || wizard_pos == skeleton_pos[2] + 40) && skeleton_blood[2] > 0)
-            next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == skeleton_pos[3] - 1 || wizard_pos == skeleton_pos[3] + 1 || wizard_pos == skeleton_pos[3] - 40 || wizard_pos == skeleton_pos[3] + 40) && skeleton_blood[3] > 0)
-            next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else
             next_wizard_blood = wizard_blood;
     // eyes' turn to attack
     else if(monster_state == 1 && animation_count == 8)
         if((wizard_pos / 40 == eye_pos[0] / 40 || (wizard_pos % 40) == (eye_pos[0] % 40)) && eye_blood[0] > 0)
-            next_wizard_blood = wizard_blood > (16 * rand_test[7:6] / 4) ? (wizard_blood - 16 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((16 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (16 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos / 40 == eye_pos[1] / 40 || (wizard_pos % 40) == (eye_pos[1] % 40)) && eye_blood[1] > 0)
-            next_wizard_blood = wizard_blood > (16 * rand_test[7:6] / 4) ? (wizard_blood - 16 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((16 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (16 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos / 40 == eye_pos[2] / 40 || (wizard_pos % 40) == (eye_pos[2] % 40)) && eye_blood[2] > 0)
-            next_wizard_blood = wizard_blood > (16 * rand_test[7:6] / 4) ? (wizard_blood - 16 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((16 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (16 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos / 40 == eye_pos[3] / 40 || (wizard_pos % 40) == (eye_pos[3] % 40)) && eye_blood[3] > 0)
-            next_wizard_blood = wizard_blood > (16 * rand_test[7:6] / 4) ? (wizard_blood - 16 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((16 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (16 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else
             next_wizard_blood = wizard_blood;
     // goblin's turn to attack
     else if(monster_state == 1 && animation_count == 9)
         if((wizard_pos == goblin_pos[0] - 1 || wizard_pos == goblin_pos[0] + 1 || wizard_pos == goblin_pos[0] - 40 || wizard_pos == goblin_pos[0] + 40) && goblin_blood[0] > 0)
-            next_wizard_blood = wizard_blood > (30 * rand_test[7:6] / 4) ? (wizard_blood - 30 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((30 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (30 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == goblin_pos[1] - 1 || wizard_pos == goblin_pos[1] + 1 || wizard_pos == goblin_pos[1] - 40 || wizard_pos == goblin_pos[1] + 40) && goblin_blood[1] > 0)
-            next_wizard_blood = wizard_blood > (30 * rand_test[7:6] / 4) ? (wizard_blood - 30 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((30 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (30 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == goblin_pos[2] - 1 || wizard_pos == goblin_pos[2] + 1 || wizard_pos == goblin_pos[2] - 40 || wizard_pos == goblin_pos[2] + 40) && goblin_blood[2] > 0)
-            next_wizard_blood = wizard_blood > (30 * rand_test[7:6] / 4) ? (wizard_blood - 30 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((30 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (30 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == goblin_pos[3] - 1 || wizard_pos == goblin_pos[3] + 1 || wizard_pos == goblin_pos[3] - 40 || wizard_pos == goblin_pos[3] + 40) && goblin_blood[3] > 0)
-            next_wizard_blood = wizard_blood > (30 * rand_test[7:6] / 4) ? (wizard_blood - 30 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((30 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (30 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else
             next_wizard_blood = wizard_blood;
     // mushrooms' turn to attack
     else if(monster_state == 1 && animation_count == 10)
         if((wizard_pos == mushroom_pos[0] - 1 || wizard_pos == mushroom_pos[0] + 1 || wizard_pos == mushroom_pos[0] - 40 || wizard_pos == mushroom_pos[0] + 40) && mushroom_blood[0] > 0)
-            next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == mushroom_pos[1] - 1 || wizard_pos == mushroom_pos[1] + 1 || wizard_pos == mushroom_pos[1] - 40 || wizard_pos == mushroom_pos[1] + 40) && mushroom_blood[1] > 0)
-            next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == mushroom_pos[2] - 1 || wizard_pos == mushroom_pos[2] + 1 || wizard_pos == mushroom_pos[2] - 40 || wizard_pos == mushroom_pos[2] + 40) && mushroom_blood[2] > 0)
-            next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else if((wizard_pos == mushroom_pos[3] - 1 || wizard_pos == mushroom_pos[3] + 1 || wizard_pos == mushroom_pos[3] - 40 || wizard_pos == mushroom_pos[3] + 40) && mushroom_blood[3] > 0)
-            next_wizard_blood = wizard_blood > (24 * rand_test[7:6] / 4) ? (wizard_blood - 24 * rand_test[7:6] / 4) : 0;
+            next_wizard_blood = wizard_blood > ((24 * (1 + monster_strength)) * rand_test[7:6] / 4) ? (wizard_blood - (24 * (1 + monster_strength)) * rand_test[7:6] / 4) : 0;
         else
             next_wizard_blood = wizard_blood;
     else
@@ -866,26 +880,26 @@ always @(*) begin
     if(knight_state == attack && animation_count == 1)
         case(selected_pos)
             skeleton_pos[0]:
-                next_skeleton_blood[0] = skeleton_blood[0] > (20 * rand_test[7:6] / 4) ? (skeleton_blood[0] - 20 * rand_test[7:6] / 4) : 0;
+                next_skeleton_blood[0] = skeleton_blood[0] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (skeleton_blood[0] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             skeleton_pos[1]:
-                next_skeleton_blood[1] = skeleton_blood[1] > (20 * rand_test[7:6] / 4) ? (skeleton_blood[1] - 20 * rand_test[7:6] / 4) : 0;
+                next_skeleton_blood[1] = skeleton_blood[1] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (skeleton_blood[1] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             skeleton_pos[2]:
-                next_skeleton_blood[2] = skeleton_blood[2] > (20 * rand_test[7:6] / 4) ? (skeleton_blood[2] - 20 * rand_test[7:6] / 4) : 0;
+                next_skeleton_blood[2] = skeleton_blood[2] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (skeleton_blood[2] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             skeleton_pos[3]:
-                next_skeleton_blood[3] = skeleton_blood[3] > (20 * rand_test[7:6] / 4) ? (skeleton_blood[3] - 20 * rand_test[7:6] / 4) : 0;
+                next_skeleton_blood[3] = skeleton_blood[3] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (skeleton_blood[3] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             default:
                 next_skeleton_blood[0] = skeleton_blood[0];     // just for filling default
         endcase
     else if(wizard_state == attack && animation_count == 1)
         case(selected_pos)
             skeleton_pos[0]:
-                next_skeleton_blood[0] = skeleton_blood[0] > (35 * rand_test[7:6] / 4) > 0 ? (skeleton_blood[0] - 35 * rand_test[7:6] / 4) : 0;
+                next_skeleton_blood[0] = skeleton_blood[0] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) > 0 ? (skeleton_blood[0] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             skeleton_pos[1]:
-                next_skeleton_blood[1] = skeleton_blood[1] > (35 * rand_test[7:6] / 4) > 0 ? (skeleton_blood[1] - 35 * rand_test[7:6] / 4) : 0;
+                next_skeleton_blood[1] = skeleton_blood[1] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) > 0 ? (skeleton_blood[1] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             skeleton_pos[2]:
-                next_skeleton_blood[2] = skeleton_blood[2] > (35 * rand_test[7:6] / 4) > 0 ? (skeleton_blood[2] - 35 * rand_test[7:6] / 4) : 0;
+                next_skeleton_blood[2] = skeleton_blood[2] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) > 0 ? (skeleton_blood[2] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             skeleton_pos[3]:
-                next_skeleton_blood[3] = skeleton_blood[3] > (35 * rand_test[7:6] / 4) > 0 ? (skeleton_blood[3] - 35 * rand_test[7:6] / 4) : 0;
+                next_skeleton_blood[3] = skeleton_blood[3] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) > 0 ? (skeleton_blood[3] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             default:
                 next_skeleton_blood[0] = skeleton_blood[0];     // just for filling default
         endcase
@@ -916,26 +930,26 @@ always @(*) begin
     if(knight_state == attack && animation_count == 1)
         case(selected_pos)
             eye_pos[0]:
-                next_eye_blood[0] = eye_blood[0] > (20 * rand_test[7:6] / 4) ? (eye_blood[0] - 20 * rand_test[7:6] / 4) : 0;
+                next_eye_blood[0] = eye_blood[0] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (eye_blood[0] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             eye_pos[1]:
-                next_eye_blood[1] = eye_blood[1] > (20 * rand_test[7:6] / 4) ? (eye_blood[1] - 20 * rand_test[7:6] / 4) : 0;
+                next_eye_blood[1] = eye_blood[1] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (eye_blood[1] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             eye_pos[2]:
-                next_eye_blood[2] = eye_blood[2] > (20 * rand_test[7:6] / 4) ? (eye_blood[2] - 20 * rand_test[7:6] / 4) : 0;
+                next_eye_blood[2] = eye_blood[2] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (eye_blood[2] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             eye_pos[3]:
-                next_eye_blood[3] = eye_blood[3] > (20 * rand_test[7:6] / 4) ? (eye_blood[3] - 20 * rand_test[7:6] / 4) : 0;
+                next_eye_blood[3] = eye_blood[3] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (eye_blood[3] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             default:
                 next_eye_blood[0] = eye_blood[0];     // just for filling default
         endcase
     else if(wizard_state == attack && animation_count == 1)
         case(selected_pos)
             eye_pos[0]:
-                next_eye_blood[0] = eye_blood[0] > (35 * rand_test[7:6] / 4) ? (eye_blood[0] - 35 * rand_test[7:6] / 4) : 0;
+                next_eye_blood[0] = eye_blood[0] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (eye_blood[0] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             eye_pos[1]:
-                next_eye_blood[1] = eye_blood[1] > (35 * rand_test[7:6] / 4) ? (eye_blood[1] - 35 * rand_test[7:6] / 4) : 0;
+                next_eye_blood[1] = eye_blood[1] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (eye_blood[1] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             eye_pos[2]:
-                next_eye_blood[2] = eye_blood[2] > (35 * rand_test[7:6] / 4) ? (eye_blood[2] - 35 * rand_test[7:6] / 4) : 0;
+                next_eye_blood[2] = eye_blood[2] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (eye_blood[2] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             eye_pos[3]:
-                next_eye_blood[3] = eye_blood[3] > (35 * rand_test[7:6] / 4) ? (eye_blood[3] - 35 * rand_test[7:6] / 4) : 0;
+                next_eye_blood[3] = eye_blood[3] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (eye_blood[3] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             default:
                 next_eye_blood[0] = eye_blood[0];     // just for filling default
         endcase
@@ -966,26 +980,26 @@ always @(*) begin
     if(knight_state == attack && animation_count == 1)
         case(selected_pos)
             goblin_pos[0]:
-                next_goblin_blood[0] = goblin_blood[0] > (20 * rand_test[7:6] / 4) ? (goblin_blood[0] - 20 * rand_test[7:6] / 4) : 0;
+                next_goblin_blood[0] = goblin_blood[0] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (goblin_blood[0] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             goblin_pos[1]:
-                next_goblin_blood[1] = goblin_blood[1] > (20 * rand_test[7:6] / 4) ? (goblin_blood[1] - 20 * rand_test[7:6] / 4) : 0;
+                next_goblin_blood[1] = goblin_blood[1] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (goblin_blood[1] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             goblin_pos[2]:
-                next_goblin_blood[2] = goblin_blood[2] > (20 * rand_test[7:6] / 4) ? (goblin_blood[2] - 20 * rand_test[7:6] / 4) : 0;
+                next_goblin_blood[2] = goblin_blood[2] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (goblin_blood[2] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             goblin_pos[3]:
-                next_goblin_blood[3] = goblin_blood[3] > (20 * rand_test[7:6] / 4) ? (goblin_blood[3] - 20 * rand_test[7:6] / 4) : 0;
+                next_goblin_blood[3] = goblin_blood[3] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (goblin_blood[3] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             default:
                 next_goblin_blood[0] = goblin_blood[0];     // just for filling default
         endcase
     else if(wizard_state == attack && animation_count == 1)
         case(selected_pos)
             goblin_pos[0]:
-                next_goblin_blood[0] = goblin_blood[0] > (35 * rand_test[7:6] / 4) ? (goblin_blood[0] - 35 * rand_test[7:6] / 4) : 0;
+                next_goblin_blood[0] = goblin_blood[0] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (goblin_blood[0] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             goblin_pos[1]:
-                next_goblin_blood[1] = goblin_blood[0] > (35 * rand_test[7:6] / 4) ? (goblin_blood[0] - 35 * rand_test[7:6] / 4) : 0;
+                next_goblin_blood[1] = goblin_blood[0] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (goblin_blood[0] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             goblin_pos[2]:
-                next_goblin_blood[2] = goblin_blood[0] > (35 * rand_test[7:6] / 4) ? (goblin_blood[0] - 35 * rand_test[7:6] / 4) : 0;
+                next_goblin_blood[2] = goblin_blood[0] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (goblin_blood[0] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             goblin_pos[3]:
-                next_goblin_blood[3] = goblin_blood[0] > (35 * rand_test[7:6] / 4) ? (goblin_blood[0] - 35 * rand_test[7:6] / 4) : 0;
+                next_goblin_blood[3] = goblin_blood[0] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (goblin_blood[0] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             default:
                 next_goblin_blood[0] = goblin_blood[0];     // just for filling default
         endcase
@@ -1016,26 +1030,26 @@ always @(*) begin
     if(knight_state == attack && animation_count == 1)
         case(selected_pos)
             mushroom_pos[0]:
-                next_mushroom_blood[0] = mushroom_blood[0] > (20 * rand_test[7:6] / 4) ? (mushroom_blood[0] - 20 * rand_test[7:6] / 4) : 0;
+                next_mushroom_blood[0] = mushroom_blood[0] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (mushroom_blood[0] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             mushroom_pos[1]:
-                next_mushroom_blood[1] = mushroom_blood[1] > (20 * rand_test[7:6] / 4) ? (mushroom_blood[1] - 20 * rand_test[7:6] / 4) : 0;
+                next_mushroom_blood[1] = mushroom_blood[1] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (mushroom_blood[1] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             mushroom_pos[2]:
-                next_mushroom_blood[2] = mushroom_blood[2] > (20 * rand_test[7:6] / 4) ? (mushroom_blood[2] - 20 * rand_test[7:6] / 4) : 0;
+                next_mushroom_blood[2] = mushroom_blood[2] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (mushroom_blood[2] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             mushroom_pos[3]:
-                next_mushroom_blood[3] = mushroom_blood[3] > (20 * rand_test[7:6] / 4) ? (mushroom_blood[3] - 20 * rand_test[7:6] / 4) : 0;
+                next_mushroom_blood[3] = mushroom_blood[3] > ((20 * (1 + player_strength)) * rand_test[7:6] / 4) ? (mushroom_blood[3] - (20 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             default:
                 next_mushroom_blood[0] = mushroom_blood[0];     // just for filling default
         endcase
     else if(wizard_state == attack && animation_count == 1)
         case(selected_pos)
             mushroom_pos[0]:
-                next_mushroom_blood[0] = mushroom_blood[0] > (35 * rand_test[7:6] / 4) ? (mushroom_blood[0] - 35 * rand_test[7:6] / 4) : 0;
+                next_mushroom_blood[0] = mushroom_blood[0] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (mushroom_blood[0] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             mushroom_pos[1]:
-                next_mushroom_blood[1] = mushroom_blood[1] > (35 * rand_test[7:6] / 4) ? (mushroom_blood[1] - 35 * rand_test[7:6] / 4) : 0;
+                next_mushroom_blood[1] = mushroom_blood[1] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (mushroom_blood[1] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             mushroom_pos[2]:
-                next_mushroom_blood[2] = mushroom_blood[2] > (35 * rand_test[7:6] / 4) ? (mushroom_blood[2] - 35 * rand_test[7:6] / 4) : 0;
+                next_mushroom_blood[2] = mushroom_blood[2] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (mushroom_blood[2] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             mushroom_pos[3]:
-                next_mushroom_blood[3] = mushroom_blood[3] > (35 * rand_test[7:6] / 4) ? (mushroom_blood[3] - 35 * rand_test[7:6] / 4) : 0;
+                next_mushroom_blood[3] = mushroom_blood[3] > ((35 * (1 + player_strength)) * rand_test[7:6] / 4) ? (mushroom_blood[3] - (35 * (1 + player_strength)) * rand_test[7:6] / 4) : 0;
             default:
                 next_mushroom_blood[0] = mushroom_blood[0];     // just for filling default
         endcase
