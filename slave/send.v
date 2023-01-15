@@ -5,7 +5,7 @@ module sender (
     output source_out
 );
 
-reg [2:0] counter, next_counter;
+reg [3:0] counter, next_counter;
 reg state, next_state;
 
 always @(posedge clk) begin
@@ -15,6 +15,7 @@ always @(posedge clk) begin
     end
     else begin
         state <= next_state;
+        counter <= next_counter;
     end
 end
 
