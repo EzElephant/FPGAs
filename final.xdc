@@ -40,8 +40,8 @@ create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_
 #    set_property IOSTANDARD LVCMOS33 [get_ports {sw[13]}]
 # set_property PACKAGE_PIN T1 [get_ports {sw[14]}]
 #    set_property IOSTANDARD LVCMOS33 [get_ports {sw[14]}]
-# set_property PACKAGE_PIN R2 [get_ports {stop}]
-#    set_property IOSTANDARD LVCMOS33 [get_ports {stop}]
+set_property PACKAGE_PIN R2 [get_ports {cheat_mode}]
+   set_property IOSTANDARD LVCMOS33 [get_ports {cheat_mode}]
 
 
 # # LEDs

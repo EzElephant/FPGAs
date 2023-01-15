@@ -1,6 +1,7 @@
 module FPGAs(
     input clk, // 100MHz clock
     input rst, // BTNC
+    input cheat_mode,
     input btn_up, // for music volume control
     input btn_down, // for music volume control
     input btn_left, // debug for lost
@@ -61,14 +62,14 @@ reg [3:0] animation_count;
 
 // record which block has character
 // in 40 * 30 map, 0 for h_cnt, 1 for v_cnt
-reg [8:0] action_pos, next_action_pos;
+reg [10:0] action_pos, next_action_pos;
 wire [10:0] selected_pos;
-reg [8:0] knight_pos = 125, next_knight_pos; 
-reg [8:0] wizard_pos = 164, next_wizard_pos;
-reg [8:0] skeleton_pos [0:3];
-reg [8:0] eye_pos [0:3];
-reg [8:0] goblin_pos [0:3];
-reg [8:0] mushroom_pos [0:3];
+reg [10:0] knight_pos = 1005, next_knight_pos; 
+reg [10:0] wizard_pos = 1043, next_wizard_pos;
+reg [9:0] skeleton_pos [0:3];
+reg [9:0] eye_pos [0:3];
+reg [9:0] goblin_pos [0:3];
+reg [9:0] mushroom_pos [0:3];
 
 reg [1:0] player_state, next_player_state;
 reg [1:0] knight_state, next_knight_state;
@@ -148,10 +149,10 @@ debounce btn_right_debounce(.clk(clk), .pb(btn_right), .pb_debounced(btn_right_d
 one_pulse btn_right_1pulse(.clk(clk), .pb_in(btn_right_d), .pb_out(btn_right_pulse));
 
 rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .SCLK(SCLK_1),
-.left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(click), .down_click(down_click));
+.left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(), .down_click(down_click));
 
 rocker2 rocker2(.clk(clk), .rst(rst), .MISO(MISO_2), .SS(SS_2), .MOSI(MOSI_2), .SCLK(SCLK_2),
-.left(scroll_right), .right(scroll_left), .up(scroll_down), .down(scroll_up), .click(), .down_click());
+.left(scroll_right), .right(scroll_left), .up(scroll_down), .down(scroll_up), .click(), .down_click(click));
 
 seven_segment Seven_segment(.clk_div(clk_div[15]), .data(show_blood), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
 
@@ -167,37 +168,37 @@ assign selected_pos = ({3'b000, choose_y} * 40) + {3'b000, choose_x};
 
 // write initial mob position... with a terrible way
 initial begin
-    skeleton_pos[3] = 63;
-    skeleton_pos[2] = 97;
-    skeleton_pos[1] = 94;
-    skeleton_pos[0] = 89;
+    skeleton_pos[3] = 363;
+    skeleton_pos[2] = 254;
+    skeleton_pos[1] = 304;
+    skeleton_pos[0] = 889;
     skeleton_blood[0] = 40;
     skeleton_blood[1] = 40;
     skeleton_blood[2] = 40;
     skeleton_blood[3] = 40;
 
-    eye_pos[3] = 144;
-    eye_pos[2] = 167;
-    eye_pos[1] = 129;
-    eye_pos[0] = 214;
+    eye_pos[3] = 354;
+    eye_pos[2] = 514;
+    eye_pos[1] = 829;
+    eye_pos[0] = 233;
     eye_blood[0] = 25;
     eye_blood[1] = 25;
     eye_blood[2] = 25;
     eye_blood[3] = 25;
 
-    goblin_pos[3] = 77;
-    goblin_pos[2] = 197;
-    goblin_pos[1] = 194;
+    goblin_pos[3] = 859;
+    goblin_pos[2] = 934;
+    goblin_pos[1] = 910;
     goblin_pos[0] = 248;
     goblin_blood[0] = 16;
     goblin_blood[1] = 16;
     goblin_blood[2] = 16;
     goblin_blood[3] = 16;
 
-    mushroom_pos[3] = 137;
-    mushroom_pos[2] = 176;
-    mushroom_pos[1] = 256;
-    mushroom_pos[0] = 252;
+    mushroom_pos[3] = 820;
+    mushroom_pos[2] = 595;
+    mushroom_pos[1] = 232;
+    mushroom_pos[0] = 273;
     mushroom_blood[0] = 60;
     mushroom_blood[1] = 60;
     mushroom_blood[2] = 60;
@@ -206,8 +207,8 @@ end
 
 always @(posedge clk) begin
     if (rst || game_rst) begin
-        choose_x <= 6;
-        choose_y <= 6;
+        choose_x <= 7;
+        choose_y <= 24;
         scroll_x <= 640;
         scroll_y <= 0;
     end
@@ -271,11 +272,7 @@ always @(*) begin
             if (btn_left_pulse || ((knight_blood == 0) && (wizard_blood == 0))) begin
                 next_game_state = LOST;
             end
-            else if (btn_right_pulse || 
-            ((skeleton_blood[0] == 0) && (skeleton_blood[1] == 0) && (skeleton_blood[2] == 0) && (skeleton_blood[3] == 0) &&
-            (eye_blood[0] == 0) && (eye_blood[1] == 0) && (eye_blood[2] == 0) && (eye_blood[3] == 0) &&
-            (goblin_blood[0] == 0) && (goblin_blood[1] == 0) && (goblin_blood[2] == 0) && (goblin_blood[3] == 0) &&
-            (mushroom_blood[0] == 0) && (mushroom_blood[1] == 0) && (mushroom_blood[2] == 0) && (mushroom_blood[3] == 0))) begin
+            else if (btn_right_pulse || knight_pos == 233 || wizard_pos == 233) begin
                 next_game_state = WIN;
             end
         end
@@ -427,7 +424,7 @@ always @(*) begin
     case(wizard_state)
         idle:
             // on the crossline of wizard
-            if((selected_pos / 40 == action_pos / 40 || selected_pos % 40 == action_pos % 40) && action_pos == wizard_pos && down_click_pulse && player_state == attack)
+            if(((selected_pos / 40 - action_pos / 40 <= 3 || action_pos / 40 - selected_pos / 40 <= 3) && ((selected_pos % 40) - (action_pos % 40) <= 3 || (action_pos % 40) - (selected_pos % 40) <= 3)) && action_pos == wizard_pos && down_click_pulse && player_state == attack)
                 // make sure player select on mobs
                 if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0])
                     next_wizard_state = attack;
@@ -440,7 +437,7 @@ always @(*) begin
                 else
                     next_wizard_state = idle;
             // wizard finish the step to move -> monster turn to attack
-            else if((selected_pos / 40 == action_pos / 40 || selected_pos % 40 == action_pos % 40) && floor_num < 3 && action_pos == wizard_pos && down_click_pulse && player_state == move)
+            else if(((selected_pos / 40 - action_pos / 40 <= 3 || action_pos / 40 - selected_pos / 40 <= 3) && ((selected_pos % 40) - (action_pos % 40) <= 3 || (action_pos % 40) - (selected_pos % 40) <= 3)) && floor_num < 4 && action_pos == wizard_pos && down_click_pulse && player_state == move)
                 // make sure player didn't select on mobs or characters
                 if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == knight_pos || selected_pos == wizard_pos)
                     next_wizard_state = idle;
@@ -492,7 +489,7 @@ end
 
 // knight energy => knight has 4 steps
 always @(posedge clk_div[1]) begin
-    if(rst || game_rst)
+    if(rst || game_rst || cheat_mode)
         knight_energy <= 0;
     else
         knight_energy = next_knight_energy;
@@ -501,7 +498,7 @@ end
 always @(*) begin
     if(knight_blood == 0)
         next_knight_energy = 0;
-    else if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 3 && down_click_pulse && player_state == move)
+    else if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 4 && down_click_pulse && player_state == move)
         // make sure player didn't select on mobs or characters 
         if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == wizard_pos || selected_pos == knight_pos)
             next_knight_energy = knight_energy;
@@ -536,7 +533,7 @@ always @(*) begin
         if(knight_blood == 0)   // knight dead
             next_action_pos = wizard_pos;
         // in the 4-direction of knight
-        else if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 3 && down_click_pulse && player_state == move)
+        else if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 4 && down_click_pulse && player_state == move)
             // make sure player didn't select on mobs or characters 
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == wizard_pos || selected_pos == knight_pos)
                 next_action_pos = knight_pos;
@@ -562,7 +559,7 @@ always @(*) begin
         if(wizard_blood == 0)   // wizard dead
             next_action_pos = 0;
         // on the crossline of wizard
-        else if((selected_pos / 40 == action_pos / 40 || selected_pos % 40 == action_pos % 40) && floor_num < 3 && down_click_pulse && player_state == move)
+        else if(((selected_pos / 40 - action_pos / 40 <= 3 || action_pos / 40 - selected_pos / 40 <= 3) && ((selected_pos % 40) - (action_pos % 40) <= 3 || (action_pos % 40) - (selected_pos % 40) <= 3)) && floor_num < 4 && down_click_pulse && player_state == move)
             // make sure player didn't select on mobs or characters
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == wizard_pos || selected_pos == knight_pos)
                 next_action_pos = wizard_pos;
@@ -590,7 +587,7 @@ end
 // knight_pos 
 always @(posedge clk_div[1]) begin
     if(rst || game_rst)
-        knight_pos <= 125;
+        knight_pos <= 1005;
     else
         knight_pos <= next_knight_pos;
 end
@@ -600,7 +597,7 @@ always @(*) begin
         next_knight_pos = 40;
     else if(action_pos == knight_pos)
         // on the 4-direction of knight
-        if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 3 && down_click_pulse && player_state == move)
+        if((selected_pos == action_pos - 1 || selected_pos == action_pos + 1 || selected_pos == action_pos - 40 || selected_pos == action_pos + 40) && floor_num < 4 && down_click_pulse && player_state == move)
             // make sure player didn't select on mobs or characters
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == wizard_pos)
                 next_knight_pos = knight_pos;
@@ -622,7 +619,7 @@ end
 // wizard_pos
 always @(posedge clk_div[1]) begin
     if(rst || game_rst)
-        wizard_pos <= 164;
+        wizard_pos <= 1043;
     else
         wizard_pos <= next_wizard_pos;
 end
@@ -632,7 +629,7 @@ always @(*) begin
         next_wizard_pos = 40;
     else if(action_pos == wizard_pos)
         // on the crossline of wizard
-        if((selected_pos / 40 == action_pos / 40 || selected_pos % 40 == action_pos % 40) && floor_num < 3 && down_click_pulse && player_state == move)
+        if(((selected_pos / 40 - action_pos / 40 <= 3 || action_pos / 40 - selected_pos / 40 <= 3) && ((selected_pos % 40) - (action_pos % 40) <= 3 || (action_pos % 40) - (selected_pos % 40) <= 3)) && floor_num < 4 && down_click_pulse && player_state == move)
             // make sure player didn't select on mobs or characters
             if(selected_pos == skeleton_pos[0] || selected_pos == eye_pos[0] || selected_pos == goblin_pos[0] || selected_pos == mushroom_pos[0] || selected_pos == knight_pos)
                 next_wizard_pos = wizard_pos;
@@ -653,10 +650,10 @@ end
 // skeleton_pos => for releasing space after dead
 always @(posedge clk_div[1]) begin
     if(rst || game_rst) begin
-        skeleton_pos[3] <= 63;
-        skeleton_pos[2] <= 97;
-        skeleton_pos[1] <= 94;
-        skeleton_pos[0] <= 89;
+        skeleton_pos[3] <= 363;
+        skeleton_pos[2] <= 254;
+        skeleton_pos[1] <= 304;
+        skeleton_pos[0] <= 889;
     end
     else
         for(i = 0;i < 4;i = i + 1) begin
@@ -670,10 +667,10 @@ end
 // eye_pos => for releasing space after dead
 always @(posedge clk_div[1]) begin
     if(rst || game_rst) begin
-        eye_pos[3] <= 144;
-        eye_pos[2] <= 167;
-        eye_pos[1] <= 129;
-        eye_pos[0] <= 214;
+        eye_pos[3] <= 354;
+        eye_pos[2] <= 514;
+        eye_pos[1] <= 829;
+        eye_pos[0] <= 233;
     end
     else
         for(i = 0;i < 4;i = i + 1) begin
@@ -687,9 +684,9 @@ end
 // skeleton_pos => for releasing space after dead
 always @(posedge clk_div[1]) begin
     if(rst || game_rst) begin
-        goblin_pos[3] <= 77;
-        goblin_pos[2] <= 197;
-        goblin_pos[1] <= 194;
+        goblin_pos[3] <= 859;
+        goblin_pos[2] <= 934;
+        goblin_pos[1] <= 910;
         goblin_pos[0] <= 248;
     end
     else
@@ -704,10 +701,10 @@ end
 // skeleton_pos => for releasing space after dead
 always @(posedge clk_div[1]) begin
     if(rst || game_rst) begin
-        mushroom_pos[3] <= 137;
-        mushroom_pos[2] <= 176;
-        mushroom_pos[1] <= 256;
-        mushroom_pos[0] <= 252;
+        mushroom_pos[3] <= 820;
+        mushroom_pos[2] <= 595;
+        mushroom_pos[1] <= 232;
+        mushroom_pos[0] <= 273;
     end
     else
         for(i = 0;i < 4;i = i + 1) begin
@@ -897,7 +894,7 @@ end
 // eye
 always @(posedge clk_div[21]) begin
     if(rst || game_rst) begin
-        eye_blood[0] <= 25;
+        eye_blood[0] <= 87;
         eye_blood[1] <= 25;
         eye_blood[2] <= 25;
         eye_blood[3] <= 25;

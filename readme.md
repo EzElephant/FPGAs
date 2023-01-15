@@ -8,7 +8,7 @@ git push repository: https://github.com/EzElephant/FPGAs.git
 This one is for map sprites
 blk_mem_gen_0
 width : 12 bits (RGB)
-depth :11264 (32 * 352)
+depth : 15360 (32 * 480)
 coe file is included in assets
 
 This one is for knight sprites
