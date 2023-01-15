@@ -157,11 +157,11 @@ create_clock -period 10.000 -name sys_clk_pin -waveform {0.000 5.000} -add [get_
 # set_property PACKAGE_PIN L2 [get_ports {MOSI}]					
 # 	set_property IOSTANDARD LVCMOS33 [get_ports {MOSI}]
 #Sch name = JA3
-set_property PACKAGE_PIN J2 [get_ports {l_click}]					
-	set_property IOSTANDARD LVCMOS33 [get_ports {l_click}]
-#Sch name = JA4
-set_property PACKAGE_PIN G2 [get_ports {l_downclick}]					
+set_property PACKAGE_PIN J2 [get_ports {l_downclick}]					
 	set_property IOSTANDARD LVCMOS33 [get_ports {l_downclick}]
+#Sch name = JA4
+set_property PACKAGE_PIN G2 [get_ports {r_downclick}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {r_downclick}]
 # ## Sch name = JA7
 #  set_property PACKAGE_PIN H1 [get_ports {left_pwm}]
 #     set_property IOSTANDARD LVCMOS33 [get_ports {left_pwm}]
