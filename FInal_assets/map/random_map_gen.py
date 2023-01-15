@@ -16,10 +16,18 @@ try:
             L = data.split(' ')
             for item in L:
                 if item == '0':
-                    content.append(f'{rand.randint(0, 2)},\n')
+                    probability = rand.randint(0, 100)
+
+                    if probability > 92:
+                        content.append('2,\n')
+                    elif probability > 45:
+                        content.append("1,\n")
+                    else:
+                        content.append("0,\n")
+                elif item == '1':
+                    content.append(f"{rand.randint(12, 14)},\n")
                 else:
                     content.append(item + ",\n")
-
             
 
         with open("map.coe", "w") as out:

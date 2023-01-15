@@ -14,10 +14,10 @@ module vga(
     input monster_state,
     input [10:0] scroll_x,
     input [10:0] scroll_y,
-    input [8:0] action_pos,
+    input [10:0] action_pos,
     input [10:0] selected_pos,
-    input [8:0] knight_pos,
-    input [8:0] wizard_pos,
+    input [10:0] knight_pos,
+    input [10:0] wizard_pos,
     input [6:0] knight_blood,
     input [6:0] wizard_blood,
     input [6:0] skeleton_blood_1,
@@ -74,10 +74,10 @@ parameter idle = 2'b11;
 // view starting point
 // reg [x:0] start;
 
-reg [8:0] skeleton_pos [0:3];
-reg [8:0] eye_pos [0:3];
-reg [8:0] goblin_pos [0:3];
-reg [8:0] mushroom_pos [0:3];
+reg [9:0] skeleton_pos [0:3];
+reg [9:0] eye_pos [0:3];
+reg [9:0] goblin_pos [0:3];
+reg [9:0] mushroom_pos [0:3];
 
 // animation frames
 reg [2:0] knight_anim_num, next_knight_anim;
@@ -110,25 +110,25 @@ blk_mem_gen_scene_2 win_scene(.clka(clk_25MHz), .addra(win_scene_addr), .douta(w
 
 // write initial mob position... with a terrible way
 initial begin
-    skeleton_pos[3] = 63;
-    skeleton_pos[2] = 97;
-    skeleton_pos[1] = 94;
-    skeleton_pos[0] = 89;
+    skeleton_pos[3] = 363;
+    skeleton_pos[2] = 254;
+    skeleton_pos[1] = 304;
+    skeleton_pos[0] = 889;
 
-    eye_pos[3] = 144;
-    eye_pos[2] = 167;
-    eye_pos[1] = 129;
-    eye_pos[0] = 214;
+    eye_pos[3] = 354;
+    eye_pos[2] = 514;
+    eye_pos[1] = 829;
+    eye_pos[0] = 233;   // finish point
 
-    goblin_pos[3] = 77;
-    goblin_pos[2] = 197;
-    goblin_pos[1] = 194;
+    goblin_pos[3] = 859;
+    goblin_pos[2] = 934;
+    goblin_pos[1] = 910;
     goblin_pos[0] = 248;
 
-    mushroom_pos[3] = 137;
-    mushroom_pos[2] = 176;
-    mushroom_pos[1] = 256;
-    mushroom_pos[0] = 252;
+    mushroom_pos[3] = 820;
+    mushroom_pos[2] = 595;
+    mushroom_pos[1] = 232;
+    mushroom_pos[0] = 273;
 end
 
 // caculate scroll window h_cnt v_cnt
@@ -219,7 +219,7 @@ always @(*) begin
                 first_layer_pixel = pixel;
         else if(map_addr == eye_pos[0])
             if((v_cnt & 5'b11111) > 1 && v_cnt[4:0] < 4 && eye_blood_1 > 0)  // 2 pixel for blood
-                if(h_cnt[4:0] < (32 * eye_blood_1 / 25))
+                if(h_cnt[4:0] < (32 * eye_blood_1 / 87))
                     first_layer_pixel = 12'hC00;
                 else
                     first_layer_pixel = 12'hFFF;
@@ -408,7 +408,7 @@ always @(*) begin
                 else if(action_pos == knight_pos)   // select range for knight
                     case(player_state)
                         move:  // move
-                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 40 || map_addr == action_pos + 40) && texture_num < 3)   // 4-direction
+                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 40 || map_addr == action_pos + 40) && texture_num < 4)   // 4-direction
                                 if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
                                     final_pixel = 12'h4Af;
                                 else
@@ -416,7 +416,7 @@ always @(*) begin
                             else
                                 final_pixel = first_layer_pixel;
                         attack:  // attack
-                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 40 || map_addr == action_pos + 40) && texture_num < 3)   // 4-direction
+                            if((map_addr == action_pos - 1 || map_addr == action_pos + 1 || map_addr == action_pos - 40 || map_addr == action_pos + 40) && texture_num < 4)   // 4-direction
                                 if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
                                     final_pixel = 12'hF22;
                                 else
@@ -429,7 +429,7 @@ always @(*) begin
                 else    // select range for wizard
                     case(player_state)
                         move:  // move
-                            if((map_addr / 40 == action_pos / 40 || map_addr % 40 == action_pos % 40) && texture_num < 3)   // 大十字
+                            if(((map_addr / 40 - action_pos / 40 <= 3 || action_pos / 40 - map_addr / 40 <= 3) && ((map_addr % 40) - (action_pos % 40) <= 3 || (action_pos % 40) - (map_addr % 40) <= 3)) && texture_num < 4)   // 大十字
                                 if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
                                     final_pixel = 12'h4Af;
                                 else
@@ -437,7 +437,7 @@ always @(*) begin
                             else
                                 final_pixel = first_layer_pixel;
                         attack:  // attack
-                            if((map_addr / 40 == action_pos / 40 || map_addr % 40 == action_pos % 40) && texture_num < 3)   
+                            if(((map_addr / 40 - action_pos / 40 <= 3 || action_pos / 40 - map_addr / 40 <= 3) && ((map_addr % 40) - (action_pos % 40) <= 3 || (action_pos % 40) - (map_addr % 40) <= 3)) && texture_num < 4)   
                                 if(h_cnt[4:0] < 2 || h_cnt[4:0] > 29 || v_cnt[4:0] < 2 || v_cnt[4:0] > 29)
                                     final_pixel = 12'hF22;
                                 else
