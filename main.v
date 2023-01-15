@@ -8,14 +8,16 @@ module FPGAs(
     input btn_down, // for music volume control
     input btn_left, // debug for lost
     input btn_right, // debug for win
-    input MISO_1, // for rocker
-    input MISO_2, // for rocker
-    output SS_1, // for rocker
-    output SS_2, // for rocker
-    output MOSI_1, // for rocker
-    output MOSI_2, // for rocker
-    output SCLK_1, // for rocker
-    output SCLK_2, // for rocker
+    input l_move_left, // left rocker input
+    input l_move_right, // left rocker input
+    input l_move_up, // left rocker input
+    input l_move_down, // left rocker input
+    input down_click, // left rocker input
+    input click, // right rocker input
+    input r_move_left, // right rocker input
+    input r_move_right, // right rocker input
+    input r_move_up, // right rocker input
+    input r_move_down, // right rocker input
     output [3:0] vgaRed, // for vga
     output [3:0] vgaGreen, // for vga
     output [3:0] vgaBlue, // for vga
@@ -155,11 +157,20 @@ one_pulse btn_left_1pulse(.clk(clk), .pb_in(btn_left_d), .pb_out(btn_left_pulse)
 debounce btn_right_debounce(.clk(clk), .pb(btn_right), .pb_debounced(btn_right_d));
 one_pulse btn_right_1pulse(.clk(clk), .pb_in(btn_right_d), .pb_out(btn_right_pulse));
 
-rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .SCLK(SCLK_1),
-.left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(), .down_click(down_click));
+special_one_pulse ll(.clk(clk), .pb_in(l_move_left), .pb_out(move_left));
+special_one_pulse lr(.clk(clk), .pb_in(l_move_right), .pb_out(move_right));
+special_one_pulse lu(.clk(clk), .pb_in(l_move_up), .pb_out(move_up));
+special_one_pulse ld(.clk(clk), .pb_in(l_move_down), .pb_out(move_down));
+special_one_pulse rl(.clk(clk), .pb_in(r_move_left), .pb_out(scroll_left));
+special_one_pulse rr(.clk(clk), .pb_in(r_move_right), .pb_out(scroll_right));
+special_one_pulse ru(.clk(clk), .pb_in(r_move_up), .pb_out(scroll_up));
+special_one_pulse rd(.clk(clk), .pb_in(r_move_down), .pb_out(scroll_down));
 
-rocker2 rocker2(.clk(clk), .rst(rst), .MISO(MISO_2), .SS(SS_2), .MOSI(MOSI_2), .SCLK(SCLK_2),
-.left(scroll_right), .right(scroll_left), .up(scroll_down), .down(scroll_up), .click(), .down_click(click));
+// rocker1 rocker1(.clk(clk), .rst(rst), .MISO(MISO_1), .SS(SS_1), .MOSI(MOSI_1), .SCLK(SCLK_1),
+// .left(move_left), .right(move_right), .up(move_up), .down(move_down), .click(), .down_click(down_click));
+
+// rocker2 rocker2(.clk(clk), .rst(rst), .MISO(MISO_2), .SS(SS_2), .MOSI(MOSI_2), .SCLK(SCLK_2),
+// .left(scroll_right), .right(scroll_left), .up(scroll_down), .down(scroll_up), .click(), .down_click(click));
 
 seven_segment Seven_segment(.clk_div(clk_div[15]), .data(show_blood), .DISPLAY(DISPLAY), .DIGIT(DIGIT));
 
