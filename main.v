@@ -343,6 +343,8 @@ always @(posedge clk_div[1]) begin
         animation_count <= 1;
     else if(action_pos == wizard_pos && down_click_pulse && player_state == move)
         animation_count <= 1;
+    else if(wizard_blood == 0 && action_pos == knight_pos && down_click_pulse && knight_energy == 3)
+        animation_count <= 1;
     else if(offset_count == 20'b1111_1111_1111_1111_1111)
         animation_count <= animation_count + 1;
     else
