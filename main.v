@@ -44,7 +44,6 @@ parameter attack = 2'b01;
 parameter hit = 2'b10;
 parameter idle = 2'b11;
 
-wire click, down_click;
 wire click_d, down_click_d, btn_up_d, btn_down_d, btn_left_d, btn_right_d;
 wire click_pulse, down_click_pulse, btn_up_pulse, btn_down_pulse, btn_left_pulse, btn_right_pulse;
 wire move_left, move_right, move_up, move_down;
