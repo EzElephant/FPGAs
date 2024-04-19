@@ -115,3 +115,5 @@ module name : blk_men_gen_1
 ports : addra[10:0]
         clka
         dina[3:0]
+        douta[3:0]
+        wea[0:0]
